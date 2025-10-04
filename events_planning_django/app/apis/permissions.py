@@ -1,5 +1,7 @@
 from rest_framework import permissions
 from rest_framework.exceptions import PermissionDenied
+
+
 class IsOrganiser(permissions.BasePermission):
     
     message = "Only organisers can perform this action."
