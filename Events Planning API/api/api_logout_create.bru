@@ -1,0 +1,21 @@
+meta {
+  name: api_logout_create
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/logout/
+  body: none
+  auth: apikey
+}
+
+headers {
+  Accept: application/json
+}
+
+auth:apikey {
+  key: sessionid
+  value: {{apiKey}}
+  placement: header
+}
