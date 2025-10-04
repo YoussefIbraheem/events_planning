@@ -1,5 +1,5 @@
 from rest_framework import permissions
-
+from rest_framework.exceptions import PermissionDenied
 class IsOrganiser(permissions.BasePermission):
     
     message = "Only organisers can perform this action."
@@ -8,4 +8,4 @@ class IsOrganiser(permissions.BasePermission):
         if request.user and request.user.is_authenticated and request.user.user_type == request.user.UserType.ORGANISER:
             return True
         else:
-            raise permissions.PermissionDenied(self.message, code=403)
+            raise PermissionDenied(self.message)

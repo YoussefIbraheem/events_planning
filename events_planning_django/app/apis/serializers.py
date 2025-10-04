@@ -15,6 +15,23 @@ class RegisterSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
     
+    def validate(self, data):
+        if data['password'] != data['password2']:
+            raise serializers.ValidationError("Passwords do not match.")
+        if CustomUser.objects.filter(username=data['username']).exists():
+            raise serializers.ValidationError("Username already exists.")
+        if CustomUser.objects.filter(email=data['email']).exists():
+            raise serializers.ValidationError("Email already exists.")
+        return data
+    
+    def create(self, validated_data):
+        user = CustomUser.objects.create_user(
+            username=validated_data['username'],
+            email=validated_data['email'],
+            password=validated_data['password']
+        )
+        return user
+    
 
 
 class LoginSerializer(serializers.Serializer):
@@ -39,16 +56,5 @@ class EventSerializer(serializers.ModelSerializer):
             "organiser",
         ]
         
-class CreateEventSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Event
-        fields = [
-            "title",
-            "description",
-            "coordinates",
-            "location_type",
-            "date_time",
-            "tickets_available",
-            "ticket_price",
-        ]
+
         
