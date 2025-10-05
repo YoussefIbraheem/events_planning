@@ -60,3 +60,23 @@ class EventFactory(AbstractFactory):
                 "organiser", None
             ),  # Should be set to a valid organiser user instance
         }
+
+
+class TicketFactory(AbstractFactory):
+
+    @staticmethod
+    def create(**kwargs):
+        return {
+            "ticket_code": kwargs.get(
+                "ticket_code", factory_faker.unique.uuid4()
+            ),
+            "seat_number": kwargs.get(
+                "seat_number", str(factory_faker.random_int(1, 1000))
+            ),
+            "event": kwargs.get(
+                "event", None
+            ),  # Should be set to a valid event instance
+            "attendee": kwargs.get(
+                "attendee", None
+            ),  # Should be set to a valid attendee user instance
+        }

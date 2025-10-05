@@ -1,6 +1,7 @@
 from .factories import UserFactory , EventFactory
-from .models import CustomUser , Event
+from .models import CustomUser , Event , Ticket
 from abc import ABC , abstractmethod
+
 class AbstractSeeder(ABC):
     
     @abstractmethod
@@ -36,3 +37,28 @@ class EventSeeder(AbstractSeeder):
             event = Event.objects.create(**event_data)
             event.save()
         self.stdout.write(self.style.SUCCESS(f"Successfully seeded {count} events"))
+        
+
+class TicketSeeder(AbstractSeeder):
+    
+    def seed(self, *args, **kwargs):
+        count = kwargs.get("count", 10)
+        for _ in range(count):
+            event = Event.objects.order_by('?').first()
+            if not event:
+                self.stdout.write(self.style.ERROR("No events found. Please seed events first."))
+                return
+            user = CustomUser.objects.filter(user_type=CustomUser.UserType.ATTENDEE).order_by('?').first()
+            if not user:
+                self.stdout.write(self.style.ERROR("No attendee users found. Please seed attendee users first."))
+                return
+            ticket_code = f"TICKET-{event.id}-{user.id}-{_}"
+            seat_number = f"SEAT-{_+1}"
+            ticket = Ticket.objects.create(
+                event=event,
+                ticket_code=ticket_code,
+                seat_number=seat_number,
+                attendee=user
+            )
+            ticket.save()
+        self.stdout.write(self.style.SUCCESS(f"Successfully seeded {count} tickets"))

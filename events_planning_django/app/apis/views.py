@@ -24,6 +24,7 @@ class UserLoginView(APIView):
     )
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
+
         serializer.is_valid(raise_exception=True)
 
         username = serializer.validated_data["username"]
@@ -34,6 +35,7 @@ class UserLoginView(APIView):
             raise AuthenticationFailed("Invalid credentials")
 
         token, _ = Token.objects.get_or_create(user=user)
+
         login(request, user)
 
         return Response(
@@ -50,10 +52,12 @@ class UserRegisterView(APIView):
     )
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
+
         serializer.is_valid(raise_exception=True)
 
         user = serializer.create(serializer.validated_data)
         token, _ = Token.objects.get_or_create(user=user)
+
         login(request, user)
 
         return Response(
@@ -66,7 +70,9 @@ class UserLogoutView(APIView):
 
     @extend_schema(responses={200: "Logged out successfully"})
     def post(self, request):
+
         logout(request)
+
         return Response(
             {"detail": "Logged out successfully"}, status=status.HTTP_200_OK
         )
