@@ -86,10 +86,15 @@ class UserLogoutView(views.APIView):
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly, custom_permissions.IsOrganiser]
+    
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            permission_classes = [IsAuthenticated, custom_permissions.IsOrganiser]
+        else:
+            permission_classes = [IsAuthenticatedOrReadOnly]
+        return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
-        print(self.request.user)
         serializer.save(organiser=self.request.user)
 
 
