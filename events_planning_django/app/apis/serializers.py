@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from app.models import CustomUser , Event
+from app.models import CustomUser , Event , Ticket
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -54,6 +54,21 @@ class EventSerializer(serializers.ModelSerializer):
             "tickets_available",
             "ticket_price",
             "organiser",
+        ]
+        
+        
+class TicketSerializer(serializers.ModelSerializer):
+    event = EventSerializer(read_only=True)
+    attendee = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Ticket
+        fields = [
+            "id",
+            "event",
+            "attendee",
+            "created_at",
+            "updated_at",
         ]
         
 

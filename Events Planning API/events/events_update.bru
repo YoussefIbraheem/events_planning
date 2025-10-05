@@ -1,0 +1,29 @@
+meta {
+  name: events_update
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{baseUrl}}/api/events/:id/
+  body: json
+  auth: inherit
+}
+
+params:path {
+  id: 
+}
+
+body:json {
+  {
+    "id": 0,
+    "title": "",
+    "description": "",
+    "coordinates": "",
+    "location_type": "",
+    "date_time": "",
+    "tickets_available": 0,
+    "ticket_price": "",
+    "organiser": ""
+  }
+}

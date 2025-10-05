@@ -1,21 +1,21 @@
 meta {
-  name: api_logout_create
+  name: logout_create
   type: http
-  seq: 2
+  seq: 1
 }
 
 post {
-  url: {{base_url}}/api/logout/
+  url: {{baseUrl}}/api/logout/
   body: none
   auth: apikey
 }
 
 headers {
-  Accept: application/json
+  Authorization: {{apiKey}}
 }
 
 auth:apikey {
-  key: sessionid
+  key: Authorization
   value: {{apiKey}}
   placement: header
 }

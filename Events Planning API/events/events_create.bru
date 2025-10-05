@@ -1,0 +1,25 @@
+meta {
+  name: events_create
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/events/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "id": 0,
+    "title": "",
+    "description": "",
+    "coordinates": "",
+    "location_type": "",
+    "date_time": "",
+    "tickets_available": 0,
+    "ticket_price": "",
+    "organiser": ""
+  }
+}

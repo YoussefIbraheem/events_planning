@@ -1,0 +1,24 @@
+meta {
+  name: login_create
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/login/
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "username": "gregorypetersen",
+    "password": "password@123"
+  }
+}
+
+script:post-response {
+  const responseBody = res.getBody()
+  const token = responseBody.access_token
+  bru.setEnvVar("apiKey", token)
+}

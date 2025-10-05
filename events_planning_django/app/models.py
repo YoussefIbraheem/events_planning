@@ -69,7 +69,6 @@ class Event(models.Model):
         CustomUser,
         on_delete=models.CASCADE,
         related_name="events",
-        validators=[validate_user_is_organiser],
     )
 
 
@@ -82,4 +81,4 @@ class Ticket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
-    attendee = models.ForeignKey(CustomUser, null=True, on_delete=models.DO_NOTHING,validators=[validate_user_is_attendee], related_name="tickets")
+    attendee = models.ForeignKey(CustomUser, null=True, on_delete=models.DO_NOTHING, related_name="tickets")

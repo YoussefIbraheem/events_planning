@@ -5,12 +5,13 @@ info:
 paths:
   /api/events/:
     get:
-      operationId: api_events_list
-      description: A simple ViewSet for listing or retrieving events.
+      operationId: events_list
       tags:
-      - api
+      - events
       security:
       - tokenAuth: []
+      - TokenAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -21,24 +22,24 @@ paths:
                   $ref: '#/components/schemas/Event'
           description: ''
     post:
-      operationId: api_events_create
-      description: A simple ViewSet for listing or retrieving events.
+      operationId: events_create
       tags:
-      - api
+      - events
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateEvent'
+              $ref: '#/components/schemas/Event'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CreateEvent'
+              $ref: '#/components/schemas/Event'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CreateEvent'
+              $ref: '#/components/schemas/Event'
         required: true
       security:
       - tokenAuth: []
+      - TokenAuth: []
       responses:
         '201':
           content:
@@ -48,18 +49,20 @@ paths:
           description: ''
   /api/events/{id}/:
     get:
-      operationId: api_events_retrieve
-      description: A simple ViewSet for listing or retrieving events.
+      operationId: events_retrieve
       parameters:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this event.
         required: true
       tags:
-      - api
+      - events
       security:
       - tokenAuth: []
+      - TokenAuth: []
+      - {}
       responses:
         '200':
           content:
@@ -68,30 +71,63 @@ paths:
                 $ref: '#/components/schemas/Event'
           description: ''
     put:
-      operationId: api_events_update
-      description: A simple ViewSet for listing or retrieving events.
+      operationId: events_update
       parameters:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this event.
         required: true
       tags:
-      - api
+      - events
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateEvent'
+              $ref: '#/components/schemas/Event'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/CreateEvent'
+              $ref: '#/components/schemas/Event'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/CreateEvent'
+              $ref: '#/components/schemas/Event'
         required: true
       security:
       - tokenAuth: []
+      - TokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+    patch:
+      operationId: events_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this event.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEvent'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEvent'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEvent'
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
       responses:
         '200':
           content:
@@ -100,32 +136,27 @@ paths:
                 $ref: '#/components/schemas/Event'
           description: ''
     delete:
-      operationId: api_events_destroy
-      description: A simple ViewSet for listing or retrieving events.
+      operationId: events_destroy
       parameters:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this event.
         required: true
       tags:
-      - api
+      - events
       security:
       - tokenAuth: []
+      - TokenAuth: []
       responses:
         '204':
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
-          description: ''
+          description: No response body
   /api/login/:
     post:
-      operationId: api_login_create
+      operationId: login_create
       tags:
-      - api
+      - login
       requestBody:
         content:
           application/json:
@@ -140,6 +171,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - TokenAuth: []
       - {}
       responses:
         '200':
@@ -158,11 +190,12 @@ paths:
           description: ''
   /api/logout/:
     post:
-      operationId: api_logout_create
+      operationId: logout_create
       tags:
-      - api
+      - logout
       security:
       - tokenAuth: []
+      - TokenAuth: []
       - {}
       responses:
         '200':
@@ -175,9 +208,9 @@ paths:
           description: ''
   /api/register/:
     post:
-      operationId: api_register_create
+      operationId: register_create
       tags:
-      - api
+      - register
       requestBody:
         content:
           application/json:
@@ -192,6 +225,7 @@ paths:
         required: true
       security:
       - tokenAuth: []
+      - TokenAuth: []
       - {}
       responses:
         '201':
@@ -208,38 +242,60 @@ paths:
                 additionalProperties: {}
                 description: Unspecified response body
           description: ''
-components:
-  schemas:
-    CreateEvent:
-      type: object
-      properties:
-        title:
-          type: string
-          maxLength: 255
-        description:
-          type: string
-          maxLength: 1000
-        coordinates: {}
-        location_type:
-          $ref: '#/components/schemas/LocationTypeEnum'
-        date_time:
+  /api/tickets/:
+    get:
+      operationId: tickets_retrieve
+      parameters:
+      - in: query
+        name: date_from
+        schema:
           type: string
           format: date-time
-        tickets_available:
+        description: Filter tickets for events occurring on or after this date.
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date-time
+        description: Filter tickets for events occurring on or before this date.
+      - in: query
+        name: event_id
+        schema:
           type: integer
-          maximum: 9223372036854775807
-          minimum: 0
-          format: int64
-        ticket_price:
-          type: number
-          format: double
-      required:
-      - date_time
-      - description
-      - location_type
-      - ticket_price
-      - tickets_available
-      - title
+        description: Filter tickets for a specific event by its ID.
+      tags:
+      - tickets
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+                description: Unspecified response body
+          description: ''
+components:
+  schemas:
     Event:
       type: object
       properties:
@@ -298,6 +354,36 @@ components:
       required:
       - password
       - username
+    PatchedEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        coordinates: {}
+        location_type:
+          $ref: '#/components/schemas/LocationTypeEnum'
+        date_time:
+          type: string
+          format: date-time
+        tickets_available:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        ticket_price:
+          type: number
+          format: double
+        organiser:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
     Register:
       type: object
       properties:

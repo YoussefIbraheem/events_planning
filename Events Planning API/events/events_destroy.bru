@@ -1,0 +1,15 @@
+meta {
+  name: events_destroy
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/api/events/:id/
+  body: none
+  auth: inherit
+}
+
+params:path {
+  id: 
+}
