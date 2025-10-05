@@ -120,33 +120,36 @@ DATABASES = {
 
 LOGGING = {
     "version": 1,
+    "formatters": {
+        "verbose": {
+            "format": "\n{levelname} {asctime} {module} {message}\n",
+            "style": "{",
+        },
+        "simple": {
+            "format": "\n{levelname} {message}\n",
+            "style": "{",
+        },
+    },
     "handlers": {
         "file": {
             "level": "DEBUG",
             "class": "logging.FileHandler",
             "filename": BASE_DIR / "debug.log",
+            "formatter": "verbose",
         },
         "console": {
             "level": "INFO",
             "class": "logging.StreamHandler",
-        },
-    },
-    "formatters": {
-        "verbose": {
-            "format": "{levelname} {asctime} {module} {message}",
-            "style": "{",
-        },
-        "simple": {
-            "format": "{levelname} {message}",
-            "style": "{",
+            "formatter": "simple",
         },
     },
     "loggers": {
         "django": {
-            "handlers": ["file", "console"],
+            "handlers": ["file"],
             "level": "DEBUG",
             "propagate": True,
         },
+        
     },
 }
 
