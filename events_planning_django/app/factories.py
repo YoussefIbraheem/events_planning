@@ -3,6 +3,7 @@ from faker import Faker
 from abc import ABC, abstractmethod
 import datetime
 import json
+
 factory_faker = Faker()
 
 
@@ -41,14 +42,22 @@ class EventFactory(AbstractFactory):
             "description": kwargs.get("description", factory_faker.paragraph(10)),
             "coordinates": kwargs.get(
                 "coordinates",
-                json.dumps({"lat": str(factory_faker.latitude()), "lng": str(factory_faker.longitude())} ,separators=(',', ':')),
+                json.dumps(
+                    {
+                        "lat": str(factory_faker.latitude()),
+                        "lng": str(factory_faker.longitude()),
+                    },
+                    separators=(",", ":"),
+                ),
             ),
             "location_type": kwargs.get(
-                "location_type",
-                factory_faker.random_element(list(Event.EventType.values)),
+                "location_type", Event.EventType.GENERAL_ADMISSION # TODO figure how to handle seated events
             ),
             "date_time": kwargs.get(
-                "date_time", factory_faker.date_time_between_dates(tomorrow_datetime, tomorrow_datetime + datetime.timedelta(days=30))
+                "date_time",
+                factory_faker.date_time_between_dates(
+                    tomorrow_datetime, tomorrow_datetime + datetime.timedelta(days=30)
+                ),
             ),
             "tickets_available": kwargs.get(
                 "tickets_available", factory_faker.random_int(50, 500)
@@ -67,9 +76,7 @@ class TicketFactory(AbstractFactory):
     @staticmethod
     def create(**kwargs):
         return {
-            "ticket_code": kwargs.get(
-                "ticket_code", factory_faker.unique.uuid4()
-            ),
+            "ticket_code": kwargs.get("ticket_code", factory_faker.unique.uuid4()),
             "seat_number": kwargs.get(
                 "seat_number", str(factory_faker.random_int(1, 1000))
             ),
