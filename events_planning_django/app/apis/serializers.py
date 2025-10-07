@@ -49,7 +49,6 @@ class EventSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "coordinates",
-            "location_type",
             "date_time",
             "tickets_available",
             "ticket_price",

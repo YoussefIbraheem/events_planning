@@ -56,9 +56,6 @@ class Event(models.Model):
     coordinates = models.JSONField(
         default=dict, validators=[validate_coordinates]
     )  # {'lat': xx.xxxx, 'lng': yy.yyyy}
-    location_type = models.CharField(
-        max_length=100, choices=EventType.choices
-    )  # e.g., 'indoor', 'outdoor'
     date_time = models.DateTimeField()
     tickets_available = models.PositiveIntegerField()
     ticket_price = models.FloatField(max_length=10)
@@ -77,7 +74,6 @@ class Ticket(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
 
     ticket_code = models.CharField(max_length=255, unique=True)
-    seat_number = models.CharField(max_length=255, null=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 

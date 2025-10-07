@@ -50,9 +50,6 @@ class EventFactory(AbstractFactory):
                     separators=(",", ":"),
                 ),
             ),
-            "location_type": kwargs.get(
-                "location_type", Event.EventType.GENERAL_ADMISSION # TODO figure how to handle seated events
-            ),
             "date_time": kwargs.get(
                 "date_time",
                 factory_faker.date_time_between_dates(
