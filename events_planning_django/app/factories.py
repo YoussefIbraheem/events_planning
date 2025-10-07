@@ -74,9 +74,6 @@ class TicketFactory(AbstractFactory):
     def create(**kwargs):
         return {
             "ticket_code": kwargs.get("ticket_code", factory_faker.unique.uuid4()),
-            "seat_number": kwargs.get(
-                "seat_number", str(factory_faker.random_int(1, 1000))
-            ),
             "event": kwargs.get(
                 "event", None
             ),  # Should be set to a valid event instance
