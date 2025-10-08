@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
-
+import uuid
 
 class CustomUser(AbstractUser):
 
@@ -78,3 +78,15 @@ class Ticket(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
     attendee = models.ForeignKey(CustomUser, null=True, on_delete=models.DO_NOTHING, related_name="tickets")
+    
+    @classmethod
+    def increase_tickets(cls, event, amount):
+        timestamp = event.date_time.strftime("%Y%m%d%H%M%S")
+        tickets = [
+            cls(
+                ticket_code=f"{event.id}-{event.organiser.id}-{timestamp}-{i+1}-{uuid.uuid4().hex[:6]}",
+                event=event,
+            )
+            for i in range(amount)
+        ]
+        cls.objects.bulk_create(tickets)

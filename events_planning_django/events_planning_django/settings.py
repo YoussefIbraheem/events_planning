@@ -131,26 +131,36 @@ LOGGING = {
         },
     },
     "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
         "file": {
-            "level": "DEBUG",
             "class": "logging.FileHandler",
             "filename": BASE_DIR / "debug.log",
             "formatter": "verbose",
         },
-        "console": {
-            "level": "INFO",
-            "class": "logging.StreamHandler",
-            "formatter": "simple",
+        
+        "null": {
+            "class": "logging.NullHandler",
         },
     },
     "loggers": {
-        "django": {
-            "handlers": ["file"],
+        "app": {
+            "handlers": ["console", "file"],
             "level": "DEBUG",
-            "propagate": True,
         },
-        
-    },
+        "django.server": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+    }
 }
 
 
