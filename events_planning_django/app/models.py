@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 import uuid
 
+
 class CustomUser(AbstractUser):
 
     class UserType(models.TextChoices):
@@ -23,7 +24,7 @@ class CustomUser(AbstractUser):
 def validate_user_is_organiser(user):
     if user.user_type != CustomUser.UserType.ORGANISER:
         raise ValidationError("User must be an organiser.")
-    
+
 
 def validate_user_is_attendee(user):
     if user.user_type != CustomUser.UserType.ATTENDEE:
@@ -57,7 +58,7 @@ class Event(models.Model):
         default=dict, validators=[validate_coordinates]
     )  # {'lat': xx.xxxx, 'lng': yy.yyyy}
     date_time = models.DateTimeField()
-    tickets_available = models.PositiveIntegerField()
+    tickets_amount = models.PositiveIntegerField()
     ticket_price = models.FloatField(max_length=10)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
@@ -77,8 +78,10 @@ class Ticket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
 
-    attendee = models.ForeignKey(CustomUser, null=True, on_delete=models.DO_NOTHING, related_name="tickets")
-    
+    attendee = models.ForeignKey(
+        CustomUser, null=True, on_delete=models.DO_NOTHING, related_name="tickets"
+    )
+
     @classmethod
     def increase_tickets(cls, event, amount):
         timestamp = event.date_time.strftime("%Y%m%d%H%M%S")
@@ -90,3 +93,33 @@ class Ticket(models.Model):
             for i in range(amount)
         ]
         cls.objects.bulk_create(tickets)
+
+
+class Order(models.Model):
+    class PaymentMethod(models.TextChoices):
+        CASH = "cash", "Cash"
+        CREDIT = "credit", "Credit"
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        COMPLETED = "completed", "Completed"
+        CANCELLED = "cancelled", "Cancellled"
+
+    total = models.FloatField(max_length=10)
+    payment_method = models.CharField(max_length=255, choices=PaymentMethod.choices)
+    status = models.CharField(
+        max_length=255, choices=Status.choices, default=Status.PENDING
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    attendee = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="orders"
+    )
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    ticket_price = models.DecimalField(max_digits=8, decimal_places=2)
+    quantity = models.PositiveIntegerField(default=1)

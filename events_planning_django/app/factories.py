@@ -1,4 +1,4 @@
-from .models import CustomUser, Event
+from .models import CustomUser, Event, Order
 from faker import Faker
 from abc import ABC, abstractmethod
 import datetime
@@ -56,8 +56,8 @@ class EventFactory(AbstractFactory):
                     tomorrow_datetime, tomorrow_datetime + datetime.timedelta(days=30)
                 ),
             ),
-            "tickets_available": kwargs.get(
-                "tickets_available", factory_faker.random_int(50, 500)
+            "tickets_amount": kwargs.get(
+                "tickets_amount", factory_faker.random_int(50, 500)
             ),
             "ticket_price": kwargs.get(
                 "ticket_price", round(factory_faker.pyfloat(2, 2, positive=True), 2)
@@ -80,4 +80,37 @@ class TicketFactory(AbstractFactory):
             "attendee": kwargs.get(
                 "attendee", None
             ),  # Should be set to a valid attendee user instance
+        }
+
+
+class OrderFactory(AbstractFactory):
+
+    @staticmethod
+    def create(**kwargs):
+        return {
+            "total": kwargs.get(
+                "total", round(factory_faker.pyfloat(2, 2, positive=True), 2)
+            ),
+            "payment_method": kwargs.get(
+                "payment_method",
+                factory_faker.random_element(Order.PaymentMethod.choices),
+            ),
+            "status": kwargs.get(
+                "status", factory_faker.random_element(Order.Status.choices)
+            ),
+            "attendee": kwargs.get("attendee", None),
+        }
+
+
+class OrderItemFactory(AbstractFactory):
+
+    @staticmethod
+    def create(**kwargs):
+        return {
+            "order": kwargs.get("order", None),
+            "event": kwargs.get("event", None),
+            "ticket_price": kwargs.get(
+                "ticket_price", round(factory_faker.pyfloat(2, 2, positive=True), 2)
+            ),
+            "quantity": kwargs.get("quantity", factory_faker.pyint(1, 5)),
         }

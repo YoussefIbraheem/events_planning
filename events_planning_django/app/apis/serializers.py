@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from app.models import CustomUser , Event , Ticket
+from app.models import CustomUser, Event, Ticket, Order
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -14,24 +14,23 @@ class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
     password2 = serializers.CharField(write_only=True)
-    
+
     def validate(self, data):
-        if data['password'] != data['password2']:
+        if data["password"] != data["password2"]:
             raise serializers.ValidationError("Passwords do not match.")
-        if CustomUser.objects.filter(username=data['username']).exists():
+        if CustomUser.objects.filter(username=data["username"]).exists():
             raise serializers.ValidationError("Username already exists.")
-        if CustomUser.objects.filter(email=data['email']).exists():
+        if CustomUser.objects.filter(email=data["email"]).exists():
             raise serializers.ValidationError("Email already exists.")
         return data
-    
+
     def create(self, validated_data):
         user = CustomUser.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data['email'],
-            password=validated_data['password']
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"],
         )
         return user
-    
 
 
 class LoginSerializer(serializers.Serializer):
@@ -50,12 +49,12 @@ class EventSerializer(serializers.ModelSerializer):
             "description",
             "coordinates",
             "date_time",
-            "tickets_available",
+            "tickets_amount",
             "ticket_price",
             "organiser",
         ]
-        
-        
+
+
 class TicketSerializer(serializers.ModelSerializer):
     event = EventSerializer(read_only=True)
     attendee = UserSerializer(read_only=True)
@@ -69,6 +68,12 @@ class TicketSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        
 
-        
+
+class OrderSerializer(serializers.ModelSerializer):
+    event = EventSerializer(read_only=True)
+    attendee = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ["id", "total", "payment_method", "status", "event", "attendee"]

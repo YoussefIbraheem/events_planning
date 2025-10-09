@@ -85,7 +85,7 @@ class EventTests(APITestCase):
             "description": "An amazing concert.",
             "coordinates": {"lat": 30.0444, "lng": 31.2357},
             "date_time": (timezone.now() + datetime.timedelta(days=1)).isoformat(),
-            "tickets_available": 100,
+            "tickets_amount": 100,
             "ticket_price": 50.0,
         }
         response = self.client.post(self.event_url, payload, format="json")
@@ -99,7 +99,7 @@ class EventTests(APITestCase):
             "description": "Should fail.",
             "coordinates": {"lat": 40.7128, "lng": -74.0060},
             "date_time": (timezone.now() + datetime.timedelta(days=2)).isoformat(),
-            "tickets_available": 50,
+            "tickets_amount": 50,
             "ticket_price": 25.0,
         }
         response = self.client.post(self.event_url, payload, format="json")
@@ -118,7 +118,7 @@ class EventTests(APITestCase):
             description="desc",
             coordinates={"lat": 10.0, "lng": 10.0},
             date_time=timezone.now() + datetime.timedelta(days=3),
-            tickets_available=10,
+            tickets_amount=10,
             ticket_price=100.0,
             organiser=self.organiser,
         )
@@ -133,7 +133,7 @@ class EventTests(APITestCase):
             description="desc",
             coordinates={"lat": 10.0, "lng": 10.0},
             date_time=timezone.now() + datetime.timedelta(days=3),
-            tickets_available=10,
+            tickets_amount=10,
             ticket_price=100.0,
             organiser=self.organiser,
         )

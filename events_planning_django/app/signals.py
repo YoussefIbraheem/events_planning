@@ -11,7 +11,7 @@ logger = logging.getLogger("app")
 @receiver(post_save, sender=Event)
 def generate_tickets(sender, instance, created, **kwargs):
     if created:
-        tickets_amounts = instance.tickets_available
+        tickets_amounts = instance.tickets_amount
         Ticket.increase_tickets(instance, tickets_amounts)
         logger.info(f"Generated {tickets_amounts} tickets for event {instance.id}")
 
@@ -34,8 +34,8 @@ def handle_ticket_amount_change(sender, instance, **kwargs):
     except Event.DoesNotExist:
         return
 
-    old_tickets_amount = old_instance.tickets_available
-    new_tickets_amount = instance.tickets_available
+    old_tickets_amount = old_instance.tickets_amount
+    new_tickets_amount = instance.tickets_amount
 
     if old_tickets_amount == new_tickets_amount:
         return
