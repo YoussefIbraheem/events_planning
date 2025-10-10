@@ -70,29 +70,7 @@ class Event(models.Model):
     )
 
 
-class Ticket(models.Model):
 
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
-
-    ticket_code = models.CharField(max_length=255, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True, null=True)
-
-    attendee = models.ForeignKey(
-        CustomUser, null=True, on_delete=models.DO_NOTHING, related_name="tickets"
-    )
-
-    @classmethod
-    def increase_tickets(cls, event, amount):
-        timestamp = event.date_time.strftime("%Y%m%d%H%M%S")
-        tickets = [
-            cls(
-                ticket_code=f"{event.id}-{event.organiser.id}-{timestamp}-{i+1}-{uuid.uuid4().hex[:6]}",
-                event=event,
-            )
-            for i in range(amount)
-        ]
-        cls.objects.bulk_create(tickets)
 
 
 class Order(models.Model):
@@ -123,3 +101,26 @@ class OrderItem(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     ticket_price = models.DecimalField(max_digits=8, decimal_places=2)
     quantity = models.PositiveIntegerField(default=1)
+
+
+class Ticket(models.Model):
+
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
+
+    ticket_code = models.CharField(max_length=255, unique=True)
+    attendee = models.ForeignKey(CustomUser, null=True, on_delete=models.SET_NULL, related_name="tickets")
+    order_item = models.ForeignKey('OrderItem', null=True, blank=True, on_delete=models.SET_NULL, related_name="tickets")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
+
+    @classmethod
+    def increase_tickets(cls, event, amount):
+        timestamp = event.date_time.strftime("%Y%m%d%H%M%S")
+        tickets = [
+            cls(
+                ticket_code=f"{event.id}-{event.organiser.id}-{timestamp}-{i+1}-{uuid.uuid4().hex[:6]}",
+                event=event,
+            )
+            for i in range(amount)
+        ]
+        cls.objects.bulk_create(tickets)

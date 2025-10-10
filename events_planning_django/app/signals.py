@@ -1,63 +1,76 @@
-from django.db.models.signals import post_save, pre_save
 import logging
+import uuid
+import datetime
+from django.db import transaction
+from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 from .models import Event, Ticket, Order, OrderItem
-import datetime
-import uuid
-from django.db import transaction, Q, F
 
 logger = logging.getLogger("app")
 
+# ------------------------------------------------------------
+# EVENT TICKET GENERATION & UPDATES
+# ------------------------------------------------------------
+
 
 @receiver(post_save, sender=Event)
-def generate_tickets(instance: Event, sender, created, **kwargs):
+def generate_tickets(sender, instance: Event, created, **kwargs):
+    """Generate initial tickets when a new event is created."""
     if created:
-        tickets_amounts = instance.tickets_amount
-        Ticket.increase_tickets(instance, tickets_amounts)
-        logger.info(f"Generated {tickets_amounts} tickets for event {instance.id}")
+        tickets_amount = instance.tickets_amount
+        Ticket.increase_tickets(instance, tickets_amount)
+        logger.info(f"Generated {tickets_amount} tickets for event {instance.id}")
 
 
 @receiver(pre_save, sender=Event)
-def handle_ticket_amount_change(instance: Event, sender, **kwargs):
+def handle_ticket_amount_change(sender, instance: Event, **kwargs):
+    """Increase or decrease tickets when event.tickets_amount changes."""
     if not instance.id:
-        return  # New event — no old instance to compare
+        return  # new event, handled by post_save above
 
     try:
         old_instance = Event.objects.get(id=instance.id)
     except Event.DoesNotExist:
         return
 
-    old_tickets_amount = old_instance.tickets_amount
-    new_tickets_amount = instance.tickets_amount
+    old_amount = old_instance.tickets_amount
+    new_amount = instance.tickets_amount
+    diff = new_amount - old_amount
 
-    if old_tickets_amount == new_tickets_amount:
+    if diff == 0:
         return
 
-    difference = new_tickets_amount - old_tickets_amount
+    logger.debug(f"Old tickets: {old_amount}, New: {new_amount}, Diff: {diff}")
 
-    logger.debug(
-        f"Old tickets: {old_tickets_amount}, New tickets: {new_tickets_amount}, Difference: {difference}"
-    )
+    if diff > 0:
+        Ticket.increase_tickets(instance, diff)
+        logger.info(f"Added {diff} tickets to event {instance.id}")
 
-    if difference > 0:
-        Ticket.increase_tickets(instance, difference)
-
-    elif difference < 0:
+    elif diff < 0:
         unsold_qs = Ticket.objects.filter(event=instance, attendee__isnull=True)
         available_unsold = unsold_qs.count()
-        if available_unsold < abs(difference):
+
+        if available_unsold < abs(diff):
             logger.warning(
                 f"Not enough unsold tickets to remove for event {instance.id}. "
-                f"Requested: {abs(difference)}, Available: {available_unsold}"
+                f"Requested: {abs(diff)}, Available: {available_unsold}"
             )
-        tickets_to_delete = list(
-            unsold_qs[: abs(difference)].values_list("id", flat=True)
+
+        to_delete_ids = list(unsold_qs.values_list("id", flat=True)[: abs(diff)])
+        unsold_qs.filter(id__in=to_delete_ids).delete()
+        logger.info(
+            f"Removed {len(to_delete_ids)} unsold tickets from event {instance.id}"
         )
-        unsold_qs.filter(id__in=tickets_to_delete).delete()
+
+
+# ------------------------------------------------------------
+# ORDER ITEM → TICKET RESERVATION
+# ------------------------------------------------------------
 
 
 @receiver(post_save, sender=OrderItem)
-def reserve_tickets(instance: OrderItem, sender, created, **kwargs):
+def reserve_tickets(sender, instance: OrderItem, created, **kwargs):
+    """Reserve tickets when a new order item is created."""
     if not created:
         return
 
@@ -74,58 +87,128 @@ def reserve_tickets(instance: OrderItem, sender, created, **kwargs):
         )
 
         if len(available_tickets) < quantity:
-
             raise ValueError("Not enough tickets available.")
 
         for ticket in available_tickets:
             ticket.attendee = attendee
+            ticket.order_item = instance
 
-        Ticket.objects.bulk_update(available_tickets, ["attendee"])
+        Ticket.objects.bulk_update(available_tickets, ["attendee", "order_item"])
+        logger.info(
+            f"Reserved {len(available_tickets)} tickets "
+            f"for order {order.id} / attendee {attendee.id}"
+        )
+
+
+# ------------------------------------------------------------
+# ORDER ITEM QUANTITY CHANGE HANDLER
+# ------------------------------------------------------------
 
 
 @receiver(pre_save, sender=OrderItem)
-def handle_quantity_change(instance: OrderItem, **kwargs):
+def handle_quantity_change(sender, instance: OrderItem, **kwargs):
+    """Adjust reserved tickets if order item quantity changes."""
     if not instance.id:
         return
 
     try:
         old_instance = OrderItem.objects.get(id=instance.id)
-    except Event.DoesNotExist:
+    except OrderItem.DoesNotExist:
         return
 
     event = instance.event
-    attendee = instance.order.attendee
-    old_quantity = old_instance.quantity
-    new_quantity = instance.quantity
+    order = instance.order
+    attendee = order.attendee
+    old_qty = old_instance.quantity
+    new_qty = instance.quantity
+    diff = new_qty - old_qty
 
-    if new_quantity == old_quantity:
+    if diff == 0:
         return
 
-    difference = new_quantity - old_quantity
-
-    if difference > 0:
-
-        with transaction.atomic():
+    with transaction.atomic():
+        if diff > 0:
+            # reserve additional tickets
             available_tickets = list(
                 Ticket.objects.select_for_update(skip_locked=True).filter(
                     event=event, attendee__isnull=True
-                )[:difference]
+                )[:diff]
             )
 
-            if len(available_tickets) < difference:
+            if len(available_tickets) < diff:
                 raise ValueError("Not enough tickets available.")
 
-            for tickets in available_tickets:
-                tickets.attendee = attendee
-            Ticket.objects.bulk_update(available_tickets, ["attendee"])
+            for ticket in available_tickets:
+                ticket.attendee = attendee
+                ticket.order_item = instance
 
-    if difference < 0:
-        excluded_tickets = list(
-            Ticket.objects.select_for_update(skip_locked=True)
-            .filter(event=event, attendee=attendee)
-            .order_by("-id")[: abs(difference)]
+            Ticket.objects.bulk_update(available_tickets, ["attendee", "order_item"])
+            logger.info(f"Added {diff} tickets for order item {instance.id}")
+
+        elif diff < 0:
+            # release excess tickets
+            tickets_to_release = list(
+                Ticket.objects.select_for_update(skip_locked=True)
+                .filter(order_item=instance, attendee=attendee)
+                .order_by("-id")[: abs(diff)]
+            )
+
+            for ticket in tickets_to_release:
+                ticket.attendee = None
+                ticket.order_item = None
+
+            Ticket.objects.bulk_update(tickets_to_release, ["attendee", "order_item"])
+            logger.info(f"Released {abs(diff)} tickets for order item {instance.id}")
+
+
+# ------------------------------------------------------------
+# ORDER CANCELLATION HANDLER
+# ------------------------------------------------------------
+
+
+@receiver(post_save, sender=Order)
+def handle_order_cancellation(sender, instance: Order, **kwargs):
+    """Free tickets when an order is cancelled."""
+    if instance.status != instance.Status.CANCELLED:
+        return
+
+    with transaction.atomic():
+        order_items = instance.items.all()
+        released_tickets = list(Ticket.objects.filter(order_item__in=order_items))
+
+        for ticket in released_tickets:
+            ticket.attendee = None
+            ticket.order_item = None
+
+        Ticket.objects.bulk_update(released_tickets, ["attendee", "order_item"])
+        logger.info(
+            f"Released {len(released_tickets)} tickets from cancelled order {instance.id}"
         )
 
-        for ticket in excluded_tickets:
+
+@receiver(post_delete, sender=OrderItem)
+def release_tickets_on_order_item_delete(sender, instance, **kwargs):
+    """Release tickets if an order item is deleted directly."""
+    with transaction.atomic():
+        tickets = Ticket.objects.filter(order_item=instance)
+        for ticket in tickets:
             ticket.attendee = None
-        Ticket.objects.bulk_update(excluded_tickets, ["attendee"])
+            ticket.order_item = None
+        Ticket.objects.bulk_update(tickets, ["attendee", "order_item"])
+        logger.info(
+            f"Released {len(tickets)} tickets due to deletion of order item {instance.id}"
+        )
+
+
+@receiver(post_delete, sender=Order)
+def release_tickets_on_order_delete(sender, instance, **kwargs):
+    """Release tickets if an entire order is deleted directly."""
+    with transaction.atomic():
+        tickets = Ticket.objects.filter(order_item__order=instance)
+        for ticket in tickets:
+            ticket.attendee = None
+            ticket.order_item = None
+        Ticket.objects.bulk_update(tickets, ["attendee", "order_item"])
+        logger.info(
+            f"Released {len(tickets)} tickets due to deletion of order {instance.id}"
+        )
