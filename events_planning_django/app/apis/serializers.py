@@ -39,7 +39,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class EventSerializer(serializers.ModelSerializer):
-    organiser = UserSerializer(read_only=True)
+    organiser = serializers.CharField(source="organiser.username", read_only=True) 
 
     class Meta:
         model = Event

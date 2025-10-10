@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_filters",
     "app",
     "rest_framework",
     "rest_framework.authtoken",
@@ -140,7 +141,6 @@ LOGGING = {
             "filename": BASE_DIR / "debug.log",
             "formatter": "verbose",
         },
-        
         "null": {
             "class": "logging.NullHandler",
         },
@@ -160,7 +160,7 @@ LOGGING = {
             "level": "INFO",
             "propagate": False,
         },
-    }
+    },
 }
 
 
