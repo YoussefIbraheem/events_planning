@@ -1,4 +1,5 @@
 from rest_framework import views, generics
+from django.db import transaction
 from rest_framework import viewsets, status, permissions
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
@@ -10,8 +11,8 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExampl
 from drf_spectacular.types import OpenApiTypes
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.authentication import TokenAuthentication
-from app.models import CustomUser, Event, Ticket
-from .filters import TicketFilter , EventFilter
+from app.models import CustomUser, Event, Ticket, Order, OrderItem
+from .filters import TicketFilter, EventFilter
 from . import permissions as custom_permissions
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from .serializers import (
@@ -20,6 +21,8 @@ from .serializers import (
     LoginSerializer,
     EventSerializer,
     TicketSerializer,
+    OrderSerializer,
+    CreateOrderSerializer
 )
 from .pagination import EventPagination
 
@@ -90,7 +93,7 @@ class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     pagination_class = EventPagination
-    filter_backends = [SearchFilter , DjangoFilterBackend]
+    filter_backends = [SearchFilter, DjangoFilterBackend]
     filterset_class = EventFilter
     search_fields = ["title", "organiser__username"]
 
@@ -133,3 +136,43 @@ class TicketListView(generics.ListAPIView):
         if user.is_authenticated and user.user_type == "organiser":
             return queryset.filter(event__organiser=user)
         return queryset
+
+
+class CheckoutView(views.APIView):
+    permission_classes = [IsAuthenticated, custom_permissions.IsAttendee]
+
+    def post(self, request):
+        serializer = CreateOrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        user = request.user
+        events_data = serializer.validated_data['events'] 
+
+        with transaction.atomic():
+
+            order = Order.objects.filter(
+                attendee=request.user, status=Order.Status.PENDING
+            ).first()
+            if not order:
+                order = Order.objects.create(attendee=user)
+
+            for event_data in events_data:
+                event = Event.objects.get(id=event_data["id"])
+                order_items = [
+                    OrderItem(
+                        order=order,
+                        event=event,
+                        ticket_price=event.ticket_price,
+                        quantity=event["quantity"],
+                    )
+                ]
+                order.total += event.ticket_price * event["quantity"]
+            
+            
+            
+            OrderItem.objects.bulk_create(order_items)
+
+        return Response(
+            OrderSerializer(order).data,
+            status=status.HTTP_200_OK,
+        )

@@ -39,7 +39,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class EventSerializer(serializers.ModelSerializer):
-    organiser = serializers.CharField(source="organiser.username", read_only=True) 
+    organiser = serializers.CharField(source="organiser.username", read_only=True)
 
     class Meta:
         model = Event
@@ -77,3 +77,13 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ["id", "total", "payment_method", "status", "event", "attendee"]
+
+
+class EventOrderItemSerializer(serializers.Serializer):
+    event_id = serializers.IntegerField()
+    quantity = serializers.IntegerField(min_value=1)
+
+
+class CreateOrderSerializer(serializers.Serializer):
+    events = EventOrderItemSerializer(many=True)
+    payment_method = serializers.ChoiceField(choices=Order.PaymentMethod.values)

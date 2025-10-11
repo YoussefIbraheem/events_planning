@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 import uuid
-
+from datetime import datetime
 
 class CustomUser(AbstractUser):
 
@@ -70,20 +70,19 @@ class Event(models.Model):
     )
 
 
-
-
-
 class Order(models.Model):
     class PaymentMethod(models.TextChoices):
         CASH = "cash", "Cash"
         CREDIT = "credit", "Credit"
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        COMPLETED = "completed", "Completed"
-        CANCELLED = "cancelled", "Cancellled"
+        PENDING = "pending", "Pending"  # created but not reserved
+        RESERVED = "reserved", "Reserved"  # tickets reserved / held
+        PAID = "paid", "Paid"  # finalized & sold
+        CANCELLED = "cancelled", "Cancelled"  # cancelled by user or system
+        EXPIRED = "expired", "Expired"
 
-    total = models.FloatField(max_length=10)
+    total_price = models.FloatField(max_length=10, default=0)
     payment_method = models.CharField(max_length=255, choices=PaymentMethod.choices)
     status = models.CharField(
         max_length=255, choices=Status.choices, default=Status.PENDING
@@ -108,14 +107,28 @@ class Ticket(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
 
     ticket_code = models.CharField(max_length=255, unique=True)
-    attendee = models.ForeignKey(CustomUser, null=True, on_delete=models.SET_NULL, related_name="tickets")
-    order_item = models.ForeignKey('OrderItem', null=True, blank=True, on_delete=models.SET_NULL, related_name="tickets")
+    attendee = models.ForeignKey(
+        CustomUser,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="tickets",
+    )
+    order_item = models.ForeignKey(
+        "OrderItem",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="tickets",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
+    reserved_until = models.DateTimeField(null=True, blank=True)
 
     @classmethod
     def increase_tickets(cls, event, amount):
-        timestamp = event.date_time.strftime("%Y%m%d%H%M%S")
+        event_date_time = event.date_time
+        timestamp = datetime.strftime(event_date_time , "%Y%m%d%H%M%S" )
         tickets = [
             cls(
                 ticket_code=f"{event.id}-{event.organiser.id}-{timestamp}-{i+1}-{uuid.uuid4().hex[:6]}",

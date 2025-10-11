@@ -68,37 +68,39 @@ def handle_ticket_amount_change(sender, instance: Event, **kwargs):
 # ------------------------------------------------------------
 
 
-@receiver(post_save, sender=OrderItem)
-def reserve_tickets(sender, instance: OrderItem, created, **kwargs):
-    """Reserve tickets when a new order item is created."""
-    if not created:
-        return
+# @receiver(post_save, sender=OrderItem)
+# def reserve_tickets(sender, instance: OrderItem, created, **kwargs):
+#     """Reserve tickets when a new order item is created."""
+#     if not created:
+#         return
 
-    with transaction.atomic():
-        event = instance.event
-        order = instance.order
-        attendee = order.attendee
-        quantity = instance.quantity
+#     with transaction.atomic():
+#         event = instance.event
+#         order = instance.order
+#         attendee = order.attendee
+#         quantity = instance.quantity
 
-        available_tickets = list(
-            Ticket.objects.select_for_update(skip_locked=True).filter(
-                event=event, attendee__isnull=True
-            )[:quantity]
-        )
+#         available_tickets = list(
+#             Ticket.objects.select_for_update(skip_locked=True).filter(
+#                 event=event, attendee__isnull=True
+#             )[:quantity]
+#         )
 
-        if len(available_tickets) < quantity:
-            raise ValueError("Not enough tickets available.")
+#         if len(available_tickets) < quantity:
+#             raise ValueError("Not enough tickets available.")
 
-        for ticket in available_tickets:
-            ticket.attendee = attendee
-            ticket.order_item = instance
+#         for ticket in available_tickets:
+#             ticket.attendee = attendee
+#             ticket.order_item = instance
 
-        Ticket.objects.bulk_update(available_tickets, ["attendee", "order_item"])
-        logger.info(
-            f"Reserved {len(available_tickets)} tickets "
-            f"for order {order.id} / attendee {attendee.id}"
-        )
+#         Ticket.objects.bulk_update(available_tickets, ["attendee", "order_item"])
+#         logger.info(
+#             f"Reserved {len(available_tickets)} tickets "
+#             f"for order {order.id} / attendee {attendee.id}"
+#         )
 
+# TODO Find another TP 
+# ! OrderItem creation WILL NOT reserve the ticket 
 
 # ------------------------------------------------------------
 # ORDER ITEM QUANTITY CHANGE HANDLER
