@@ -2,6 +2,8 @@ from django.db import transaction
 from django.utils import timezone
 from app.models import Ticket, Order
 from logging import getLogger
+from datetime import datetime
+import uuid
 
 logger = getLogger("app")
 
@@ -74,3 +76,16 @@ class TicketService:
         Ticket.objects.bulk_update(tickets, ["order_item", "reserved_until"])
         order.status = Order.Status.CANCELLED
         order.save()
+
+    @staticmethod
+    def increase_tickets(event, amount):
+        event_date_time = event.date_time
+        timestamp = datetime.strftime(event_date_time, "%Y%m%d%H%M%S")
+        tickets = [
+            Ticket(
+                ticket_code=f"{event.id}-{event.organiser.id}-{timestamp}-{i+1}-{uuid.uuid4().hex[:6]}",
+                event=event,
+            )
+            for i in range(amount)
+        ]
+        Ticket.objects.bulk_create(tickets)

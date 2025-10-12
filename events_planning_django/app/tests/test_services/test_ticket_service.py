@@ -40,7 +40,7 @@ class TestTicketService:
 
     @pytest.fixture
     def tickets(self, event):
-        Ticket.increase_tickets(event, 10)
+        TicketService.increase_tickets(event, 10)
         return Ticket.objects.filter(event=event)
 
     @pytest.fixture
@@ -50,12 +50,6 @@ class TestTicketService:
             order=order, event=event, ticket_price=event.ticket_price, quantity=3
         )
         return order
-
-    @pytest.fixture(autouse=True)
-    def disable_signals(monkeypatch):
-        post_save.disconnect(generate_tickets, sender=Event)
-        yield
-        post_save.connect(generate_tickets, sender=Event)
 
     # --- TESTS ---
 

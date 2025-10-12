@@ -5,7 +5,7 @@ from django.db import transaction
 from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 from .models import Event, Ticket, Order, OrderItem
-
+from app.services.tickets import TicketService
 logger = logging.getLogger("app")
 
 # ------------------------------------------------------------
@@ -18,7 +18,7 @@ def generate_tickets(sender, instance: Event, created, **kwargs):
     """Generate initial tickets when a new event is created."""
     if created:
         tickets_amount = instance.tickets_amount
-        Ticket.increase_tickets(instance, tickets_amount)
+        TicketService.increase_tickets(instance, tickets_amount)
         logger.info(f"Generated {tickets_amount} tickets for event {instance.id}")
 
 
@@ -43,7 +43,7 @@ def handle_ticket_amount_change(sender, instance: Event, **kwargs):
     logger.debug(f"Old tickets: {old_amount}, New: {new_amount}, Diff: {diff}")
 
     if diff > 0:
-        Ticket.increase_tickets(instance, diff)
+        TicketService.increase_tickets(instance, diff)
         logger.info(f"Added {diff} tickets to event {instance.id}")
 
     elif diff < 0:
