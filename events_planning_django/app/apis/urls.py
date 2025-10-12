@@ -5,6 +5,7 @@ from .views import (
     UserLogoutView,
     EventViewSet,
     TicketListView,
+    OrderViewSet
 )
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -15,7 +16,7 @@ from rest_framework.routers import SimpleRouter
 
 router = SimpleRouter()
 router.register(r"events", EventViewSet, basename="event")
-
+router.register(r"orders",OrderViewSet, basename="order")
 
 urlpatterns = [
     path("login/", UserLoginView.as_view(), name="login"),

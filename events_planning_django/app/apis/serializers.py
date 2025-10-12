@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from app.models import CustomUser, Event, Ticket, Order
+from app.models import CustomUser, Event, Ticket, Order, OrderItem
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -70,20 +70,39 @@ class TicketSerializer(serializers.ModelSerializer):
         ]
 
 
-class OrderSerializer(serializers.ModelSerializer):
-    event = EventSerializer(read_only=True)
-    attendee = UserSerializer(read_only=True)
-
+class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Order
-        fields = ["id", "total", "payment_method", "status", "event", "attendee"]
+        model = OrderItem
+        fields = ["event", "quantity"]
 
 
-class EventOrderItemSerializer(serializers.Serializer):
+class CreateOrderItemSerializer(serializers.Serializer):
     event_id = serializers.IntegerField()
     quantity = serializers.IntegerField(min_value=1)
 
+    def validate_event_id(self, value):
+        if not Event.objects.filter(id=value).exists():
+            if not Event.objects.filter(id=value).exists():
+                raise serializers.ValidationError("Invalid event ID — event not found.")
+        return value
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    attendee = serializers.CharField(source="attendee.username", read_only=True)
+    items = OrderItemSerializer(many=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            "id",
+            "total_price",
+            "payment_method",
+            "status",
+            "attendee",
+            "items",
+        ]
+
 
 class CreateOrderSerializer(serializers.Serializer):
-    events = EventOrderItemSerializer(many=True)
+    items = CreateOrderItemSerializer(many=True)
     payment_method = serializers.ChoiceField(choices=Order.PaymentMethod.values)

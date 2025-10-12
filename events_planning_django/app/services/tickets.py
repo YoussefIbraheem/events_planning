@@ -4,8 +4,7 @@ from app.models import Ticket, Order
 from logging import getLogger
 from datetime import datetime
 import uuid
-
-logger = getLogger("app")
+from . import logger
 
 
 class TicketService:
@@ -88,4 +87,20 @@ class TicketService:
             )
             for i in range(amount)
         ]
+
         Ticket.objects.bulk_create(tickets)
+        logger.info(f"Added {tickets.count()} tickets to event {event.title}")
+
+    @staticmethod
+    def decrease_unsold_tickets(event, amount):
+        """Remove unsold tickets if event's total amount decreases."""
+        unsold_tickets = Ticket.objects.filter(event=event, attendee__isnull=True)[
+            :amount
+        ]
+        logger.info(
+            f"Removing {unsold_tickets.count()} unsold tickets from event {event.title}...\n"
+        )
+        
+        unsold_tickets.delete()
+
+        logger.info(f"Done!")

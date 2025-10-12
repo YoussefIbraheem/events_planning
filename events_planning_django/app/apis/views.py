@@ -1,16 +1,13 @@
 from rest_framework import views, generics
-from django.db import transaction
-from rest_framework import viewsets, status, permissions
+from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
-from rest_framework.exceptions import AuthenticationFailed
+from rest_framework.exceptions import AuthenticationFailed, APIException
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
-from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 from django.contrib.auth import authenticate, login, logout
-from rest_framework.authentication import TokenAuthentication
 from app.models import CustomUser, Event, Ticket, Order, OrderItem
 from .filters import TicketFilter, EventFilter
 from . import permissions as custom_permissions
@@ -22,16 +19,23 @@ from .serializers import (
     EventSerializer,
     TicketSerializer,
     OrderSerializer,
-    CreateOrderSerializer
+    CreateOrderSerializer,
 )
+from app.services.orders import OrderService
+from app.services.tickets import TicketService
 from .pagination import EventPagination
 
 
 class UserLoginView(views.APIView):
 
+    serializer_class = LoginSerializer
+
     @extend_schema(
         request=LoginSerializer,
-        responses={200: UserSerializer, 401: "Unauthorized"},
+        responses={
+            200: UserSerializer,
+            401: OpenApiResponse(description="Unauthorized"),
+        },
     )
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
@@ -57,9 +61,14 @@ class UserLoginView(views.APIView):
 
 class UserRegisterView(views.APIView):
 
+    serializer_class = RegisterSerializer
+
     @extend_schema(
         request=RegisterSerializer,
-        responses={201: UserSerializer, 400: "Bad Request"},
+        responses={
+            201: UserSerializer,
+            400: OpenApiResponse(description="Bad Request"),
+        },
     )
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -79,7 +88,11 @@ class UserRegisterView(views.APIView):
 
 class UserLogoutView(views.APIView):
 
-    @extend_schema(responses={200: "Logged out successfully"})
+    serializer_class = LoginSerializer
+
+    @extend_schema(
+        responses={200: OpenApiResponse(description="Logged out successfully")}
+    )
     def post(self, request):
 
         logout(request)
@@ -138,41 +151,115 @@ class TicketListView(generics.ListAPIView):
         return queryset
 
 
-class CheckoutView(views.APIView):
-    permission_classes = [IsAuthenticated, custom_permissions.IsAttendee]
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
 
-    def post(self, request):
-        serializer = CreateOrderSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            permission_classes = [IsAuthenticated, custom_permissions.IsAttendee]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
-        user = request.user
-        events_data = serializer.validated_data['events'] 
+    def get_serializer_class(self):
+        if self.action in ["create", "update", "partial_update"]:
+            return CreateOrderSerializer
+        return OrderSerializer
 
-        with transaction.atomic():
+    def get_queryset(self):
+        user = self.request.user
+        if user.user_type == CustomUser.UserType.ATTENDEE:
+            return (
+                Order.objects.filter(attendee=user)
+                .select_related("attendee")
+                .prefetch_related("items__event")
+            )
+        else:
+            return super().get_queryset()
 
-            order = Order.objects.filter(
-                attendee=request.user, status=Order.Status.PENDING
-            ).first()
-            if not order:
-                order = Order.objects.create(attendee=user)
+    def perform_create(self, serializer):
+        user = self.request.user
+        validated_data = serializer.validated_data
 
-            for event_data in events_data:
-                event = Event.objects.get(id=event_data["id"])
-                order_items = [
-                    OrderItem(
-                        order=order,
-                        event=event,
-                        ticket_price=event.ticket_price,
-                        quantity=event["quantity"],
-                    )
-                ]
-                order.total += event.ticket_price * event["quantity"]
-            
-            
-            
-            OrderItem.objects.bulk_create(order_items)
+        order = OrderService.create_order(user, validated_data)
 
-        return Response(
-            OrderSerializer(order).data,
-            status=status.HTTP_200_OK,
-        )
+        serializer.instance = order
+
+    def perform_update(self, serializer):
+
+        user = self.request.user
+        order = serializer.instance
+        validated_data = serializer.validated_data
+
+        updated_order = OrderService.update_order(user, order, validated_data)
+
+        serializer.instance = updated_order
+
+    def perform_destroy(self, instance):
+        if instance.status not in [Order.Status.CANCELLED or Order.Status.EXPIRED]:
+            raise APIException(
+                "Order cannot be deleted. Please cancel the order or contact support.",
+                status.HTTP_401_UNAUTHORIZED,
+            )
+        return super().perform_destroy(instance)
+
+    # ----------------#
+    # * CUSTOM ACTIONS
+    # ----------------#
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description="Tickets reserved successfully."),
+            400: OpenApiResponse(description="Reservation failed."),
+        }
+    )
+    @action(
+        detail=True, methods=["POST"], url_path="checkout", url_name="order_checkout"
+    )
+    def checkout(self, request, pk=None):
+
+        order = self.get_object()
+
+        try:
+            TicketService.reserve_tickets(order)
+            return Response(
+                {"detail": "Tickets Reserved Successfully"}, status=status.HTTP_200_OK
+            )
+        except:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description="Tickets reserved successfully."),
+            400: OpenApiResponse(description="Reservation failed."),
+        }
+    )
+    @action(
+        detail=True, methods=["POST"], url_path="finalise", url_name="order_finalize"
+    )
+    def finalize(self, request, pk=None):
+        order = self.get_object()
+        try:
+            TicketService.finalize_order(order)
+            return Response(
+                {"detail": "Tickets Reserved Successfully."}, status=status.HTTP_200_OK
+            )
+        except:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(description="Order cancelled successfully."),
+            400: OpenApiResponse(description="Cancellation failed."),
+        }
+    )
+    @action(detail=True, methods=["POST"], url_path="cancel", url_name="order_cancel")
+    def cancel(self, request, pk=None):
+        order = self.get_object()
+        try:
+            TicketService.release_reservation(order)
+            return Response(
+                {"detail": "Order cancelled successfully."}, status=status.HTTP_200_OK
+            )
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
