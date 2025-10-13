@@ -2,14 +2,14 @@ from rest_framework import views, generics
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
-from rest_framework.exceptions import AuthenticationFailed, APIException
+from rest_framework.exceptions import AuthenticationFailed, APIException , ValidationError , NotAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 from django.contrib.auth import authenticate, login, logout
 from app.models import CustomUser, Event, Ticket, Order, OrderItem
-from .filters import TicketFilter, EventFilter
+from .filters import TicketFilter, EventFilter, OrderFilter
 from . import permissions as custom_permissions
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from .serializers import (
@@ -24,6 +24,9 @@ from .serializers import (
 from app.services.orders import OrderService
 from app.services.tickets import TicketService
 from .pagination import EventPagination
+import logging
+
+
 
 
 class UserLoginView(views.APIView):
@@ -153,6 +156,8 @@ class TicketListView(generics.ListAPIView):
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = OrderFilter
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
@@ -181,23 +186,30 @@ class OrderViewSet(viewsets.ModelViewSet):
         user = self.request.user
         validated_data = serializer.validated_data
 
-        order = OrderService.create_order(user, validated_data)
-
-        serializer.instance = order
+        try:
+            order = OrderService.create_order(user, validated_data)
+            serializer.instance = order
+        except ValueError as e:
+            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
 
     def perform_update(self, serializer):
 
         user = self.request.user
         order = serializer.instance
         validated_data = serializer.validated_data
+        try:
+            OrderService.update_order(user, order, validated_data)
 
-        updated_order = OrderService.update_order(user, order, validated_data)
+            return Response(
+                {"detail": "Order Updated Successfully"}, status=status.HTTP_200_OK
+            )
 
-        serializer.instance = updated_order
+        except ValueError as e:
+            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
 
     def perform_destroy(self, instance):
         if instance.status not in [Order.Status.CANCELLED or Order.Status.EXPIRED]:
-            raise APIException(
+            raise NotAuthenticated(
                 "Order cannot be deleted. Please cancel the order or contact support.",
                 status.HTTP_401_UNAUTHORIZED,
             )
@@ -225,8 +237,8 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response(
                 {"detail": "Tickets Reserved Successfully"}, status=status.HTTP_200_OK
             )
-        except:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as e:
+            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         responses={
@@ -244,8 +256,8 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response(
                 {"detail": "Tickets Reserved Successfully."}, status=status.HTTP_200_OK
             )
-        except:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ValueError as e:
+            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         responses={
@@ -262,4 +274,4 @@ class OrderViewSet(viewsets.ModelViewSet):
                 {"detail": "Order cancelled successfully."}, status=status.HTTP_200_OK
             )
         except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)

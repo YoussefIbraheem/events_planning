@@ -1,5 +1,4 @@
 from django.db import transaction
-from . import logger
 from app.models import OrderItem, Order, Event, Ticket
 from rest_framework.response import Response
 from rest_framework import status
@@ -60,24 +59,33 @@ class OrderService:
     @classmethod
     @transaction.atomic
     def update_order(cls, user, order, validated_data):
+        
         if order.status != Order.Status.PENDING:
             raise ValueError(f"Order is in {order.status} state and cannot be updated!")
 
-        new_items = cls._sync_order_items(validated_data["items"])
+        new_items_data = cls._sync_order_items(validated_data["items"])
         payment_method = validated_data["payment_method"]
 
         order.items.all().delete()
 
-        OrderItem.objects.bulk_create(
-            [
-                OrderItem(
-                    order=order, event_id=item["event_id"], quantity=item["quantity"]
-                )
-                for item in new_items
-            ]
-        )
+        new_items = []
+        new_total_price = 0
 
+        for item in new_items_data:
+            event = Event.objects.get(id=item["event_id"])
+            quantity = item["quantity"]
+            new_item = OrderItem(
+                event=event,
+                quantity=quantity,
+                order=order,
+                ticket_price=event.ticket_price,
+            )
+            new_items.append(new_item)
+            new_total_price += event.ticket_price * quantity
+
+        OrderItem.objects.bulk_create(new_items)
         order.payment_method = payment_method
+        order.total_price = new_total_price
 
         order.save(update_fields=["payment_method"])
 

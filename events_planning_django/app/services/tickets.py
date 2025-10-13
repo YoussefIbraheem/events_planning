@@ -4,8 +4,8 @@ from app.models import Ticket, Order
 from logging import getLogger
 from datetime import datetime
 import uuid
-from . import logger
 
+logger = getLogger("app")
 
 class TicketService:
 
