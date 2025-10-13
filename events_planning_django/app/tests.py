@@ -1,1 +1,1 @@
-import app.apis.tests
+import events_planning_django.app.tests.apis.tests
