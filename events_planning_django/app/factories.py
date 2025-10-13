@@ -80,7 +80,7 @@ class TicketFactory(AbstractFactory):
             "attendee": kwargs.get(
                 "attendee", None
             ),  # Should be set to a valid attendee user instance
-            "ticket_price": kwargs.get("ticket_price", 0),
+            # "ticket_price": kwargs.get("ticket_price", 0),
         }
 
 
