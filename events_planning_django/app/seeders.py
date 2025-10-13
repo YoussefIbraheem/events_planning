@@ -5,7 +5,7 @@ from .factories import (
     OrderFactory,
     OrderItemFactory,
 )
-from .models import CustomUser, Event, Ticket, Order
+from .models import CustomUser, Event, Ticket, Order, OrderItem
 from abc import ABC, abstractmethod
 from django.db.models import Q, Count, F
 from django.db import IntegrityError, transaction
@@ -38,7 +38,8 @@ class EventSeeder(AbstractSeeder):
 
     def seed(self, *args, **kwargs):
         factory = EventFactory()
-        count = kwargs.get("count", 10)
+        count = kwargs.get("count")
+        events_created = 0
         for _ in range(count):
             user = (
                 CustomUser.objects.filter(user_type=CustomUser.UserType.ORGANISER)
@@ -55,14 +56,15 @@ class EventSeeder(AbstractSeeder):
             event_data = factory.create(organiser=user)
             event = Event.objects.create(**event_data)
             event.save()
-        self.stdout.write(self.style.SUCCESS(f"Successfully seeded {count} events"))
+            events_created += 1
+        self.stdout.write(self.style.SUCCESS(f"Successfully seeded {events_created} events"))
 
 
 class TicketSeeder(AbstractSeeder):
 
     def seed(self, *args, **kwargs):
         factory = TicketFactory()
-        count = kwargs.get("count", 10)
+        count = kwargs.get("count")
         for _ in range(count):
             event = Event.objects.order_by("?").first()
             if not event:
@@ -81,65 +83,65 @@ class OrderSeeder(AbstractSeeder):
     def seed(self, *args, **kwargs):
         order_factory = OrderFactory()
         count = kwargs.get("count", 10)
+        orders_created = 0
 
+        attendees = list(
+            CustomUser.objects.filter(user_type=CustomUser.UserType.ATTENDEE).order_by(
+                "?"
+            )
+        )
+        if not attendees:
+            self.stdout.write(
+                self.style.ERROR("No attendees found. Please seed attendees first.")
+            )
+            return
+
+        events = list(
+            Event.objects.annotate(
+                sold_tickets=Count(
+                    "tickets", filter=Q(tickets__attendee__isnull=False)
+                ),
+                total_tickets=F("tickets_amount"),
+            )
+            .filter(sold_tickets__lt=F("tickets_amount"))
+            .order_by("?")
+        )  # pick a random event that still has unsold tickets
+        if not events:
+            self.stdout.write(self.style.ERROR("No available events found."))
+            return
+
+        order_item_factory = OrderItemFactory()
         for _ in range(count):
-            attendee = (
-                CustomUser.objects.filter(user_type=CustomUser.UserType.ATTENDEE)
-                .order_by("?")
-                .first()
-            )
-            if not attendee:
-                self.stdout.write(
-                    self.style.ERROR("No attendees found. Please seed attendees first.")
-                )
-                return
-
-            # pick a random event that still has unsold tickets
-            event = (
-                Event.objects.annotate(
-                    sold_tickets=Count(
-                        "tickets", filter=Q(tickets__attendee__isnull=False)
-                    ),
-                    total_tickets=F("tickets_amount"),
-                )
-                .filter(sold_tickets__lt=F("tickets_amount"))
-                .order_by("?")
-                .first()
-            )
-            if not event:
-                self.stdout.write(
-                    self.style.WARNING("No available events found — skipping.")
-                )
-                continue
+            attendee = random.choice(attendees)
+            event = random.choice(events)
+            item_quantity = random.randint(1, 3)
 
             try:
                 with transaction.atomic():
-                    order_data = order_factory.create(attendee=attendee)
+
+                    order_data = order_factory.create(
+                        attendee=attendee,
+                        total_price=event.ticket_price * item_quantity,
+                    )
                     order = Order.objects.create(**order_data)
 
-                    order_item_factory = OrderItemFactory()
-                    order_item_factory.create(
-                        event=event,
+                    order_item_data = order_item_factory.create(
+                        attendee=attendee,
                         order=order,
+                        event=event,
                         ticket_price=event.ticket_price,
-                        quantity=random.randint(1, 3),
+                        quantity=item_quantity,
                     )
 
-                    self.stdout.write(
-                        self.style.SUCCESS(f"Order created for {attendee.email}")
-                    )
+                    OrderItem.objects.create(**order_item_data)
 
-            except ValueError as e:
-
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"Skipping order (not enough tickets for event {event.title}): {e}"
-                    )
-                )
-                continue
-
+                    orders_created += 1
             except IntegrityError as e:
-                self.stdout.write(
-                    self.style.WARNING(f"Skipping due to DB integrity issue: {e}")
-                )
+                self.stdout.write(self.style.WARNING(f"DB Integrety Error: {e}"))
                 continue
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Successfully seeded {orders_created} orders with items"
+            )
+        )

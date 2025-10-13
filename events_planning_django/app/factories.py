@@ -80,6 +80,7 @@ class TicketFactory(AbstractFactory):
             "attendee": kwargs.get(
                 "attendee", None
             ),  # Should be set to a valid attendee user instance
+            "ticket_price": kwargs.get("ticket_price", 0),
         }
 
 
@@ -88,15 +89,13 @@ class OrderFactory(AbstractFactory):
     @staticmethod
     def create(**kwargs):
         return {
-            "total": kwargs.get(
-                "total", round(factory_faker.pyfloat(2, 2, positive=True), 2)
-            ),
+            "total_price": kwargs.get("total_price", 0),
             "payment_method": kwargs.get(
                 "payment_method",
-                factory_faker.random_element(Order.PaymentMethod.choices),
+                factory_faker.random_element(list(Order.PaymentMethod.values)),
             ),
             "status": kwargs.get(
-                "status", factory_faker.random_element(Order.Status.choices)
+                "status", factory_faker.random_element(list(Order.Status.values))
             ),
             "attendee": kwargs.get("attendee", None),
         }
@@ -109,8 +108,6 @@ class OrderItemFactory(AbstractFactory):
         return {
             "order": kwargs.get("order", None),
             "event": kwargs.get("event", None),
-            "ticket_price": kwargs.get(
-                "ticket_price", round(factory_faker.pyfloat(2, 2, positive=True), 2)
-            ),
-            "quantity": kwargs.get("quantity", factory_faker.pyint(1, 5)),
+            "ticket_price": kwargs.get("ticket_price", 0),
+            "quantity": kwargs.get("quantity", 0),
         }

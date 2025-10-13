@@ -89,7 +89,7 @@ class TicketService:
         ]
 
         Ticket.objects.bulk_create(tickets)
-        logger.info(f"Added {tickets.count()} tickets to event {event.title}")
+        logger.info(f"Added {amount} tickets to event {event.title}")
 
     @staticmethod
     def decrease_unsold_tickets(event, amount):

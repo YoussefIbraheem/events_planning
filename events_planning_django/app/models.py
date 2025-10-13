@@ -96,7 +96,7 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
-    ticket_price = models.DecimalField(max_digits=8, decimal_places=2)
+    ticket_price = models.FloatField(max_length=10)
     quantity = models.PositiveIntegerField(default=1)
 
 
