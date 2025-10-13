@@ -14,6 +14,7 @@ logger = logging.getLogger("app")
 # ------------------------------------------------------------
 
 
+@receiver(post_save, sender=Event)
 def generate_tickets(sender, instance: Event, created, **kwargs):
     """Generate initial tickets when a new event is created."""
     if created:
@@ -45,9 +46,7 @@ def handle_ticket_amount_change(sender, instance: Event, **kwargs):
 
     if diff > 0:
         TicketService.increase_tickets(event=instance, amount=diff)
-        
 
     elif diff < 0:
 
         TicketService.decrease_unsold_tickets(event=instance, amount=abs(diff))
-        
