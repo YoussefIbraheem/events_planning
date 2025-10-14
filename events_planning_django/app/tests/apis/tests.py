@@ -63,6 +63,7 @@ def event(db, organiser):
         tickets_amount=10,
         ticket_price=50.0,
         organiser=organiser,
+        event_status=Event.Status.UPCOMING
     )
     # Make sure tickets exist (many projects auto-generate on post_save)
     # if your project uses post_save to create tickets, creation may already happen.

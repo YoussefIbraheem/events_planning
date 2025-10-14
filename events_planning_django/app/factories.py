@@ -56,6 +56,7 @@ class EventFactory(AbstractFactory):
                     tomorrow_datetime, tomorrow_datetime + datetime.timedelta(days=30)
                 ),
             ),
+            "event_status": kwargs.get("event_status",factory_faker.random_element(list(Event.Status.values))),
             "tickets_amount": kwargs.get(
                 "tickets_amount", factory_faker.random_int(50, 500)
             ),

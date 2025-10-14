@@ -16,6 +16,7 @@ class OrderService:
 
         return [{"event_id": eid, "quantity": qty} for eid, qty in merged.items()]
 
+
     @classmethod
     @transaction.atomic
     def create_order(cls, user, validated_data):
@@ -30,36 +31,65 @@ class OrderService:
         if existing_order:
             raise ValueError("You already have an active order.")
 
+        event_ids = [i["event_id"] for i in items_data]
+        events = {e.id: e for e in Event.objects.filter(id__in=event_ids)}
+
         order = Order.objects.create(
             attendee=user,
             payment_method=payment_method,
             status=Order.Status.PENDING,
         )
 
-        for item_data in items_data:
-            event = Event.objects.get(pk=item_data["event_id"])
+        new_items = []
+        adding_item_errors = []
+        order_total_price = 0
 
-            sold_tickets = Ticket.objects.filter(
-                event=event, attendee__isnull=False
-            ).count()
-            if sold_tickets + item_data["quantity"] > event.tickets_amount:
-                raise ValueError(
-                    f"Not enough tickets available for event '{event.title}'"
+        for item in items_data:
+            event = events.get(item["event_id"])
+
+            if not event:
+                adding_item_errors.append(
+                    f"Event with ID {item['event_id']} not found."
                 )
+                continue
 
-            OrderItem.objects.create(
+            if event.event_status not in [
+                Event.Status.UPCOMING,
+                Event.Status.POSTPONED,
+            ]:
+                adding_item_errors.append(
+                    f"Event '{event.title}' is not open for booking (status: {event.event_status})."
+                )
+                continue
+
+            sold_tickets = event.tickets.filter(attendee__isnull=False).count()
+            if sold_tickets + item["quantity"] > event.tickets_amount:
+                adding_item_errors.append(f"Not enough tickets for {event.title}")
+                continue
+
+            new_item = OrderItem(
                 order=order,
                 event=event,
-                quantity=item_data["quantity"],
+                quantity=item["quantity"],
                 ticket_price=event.ticket_price,
             )
+            new_items.append(new_item)
+            order_total_price += event.ticket_price * item["quantity"]
+
+        if not new_items or adding_item_errors:
+            order.delete()
+            raise ValueError(", ".join(adding_item_errors))
+
+        OrderItem.objects.bulk_create(new_items)
+        order.total_price = order_total_price
+        order.save(update_fields=["total_price"])
 
         return order
 
     @classmethod
     @transaction.atomic
     def update_order(cls, user, order, validated_data):
-        
+
         if order.status != Order.Status.PENDING:
             raise ValueError(f"Order is in {order.status} state and cannot be updated!")
 

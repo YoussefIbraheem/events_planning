@@ -45,10 +45,16 @@ def validate_coordinates(value):
 
 
 class Event(models.Model):
-
-    class EventType(models.TextChoices):
-        SEATED = "seated", "Seated"
-        GENERAL_ADMISSION = "general_admission", "General Admission"
+    
+    class Status(models.TextChoices):
+        SOON = "soon", "Soon"
+        UPCOMING = "upcoming", "Upcoming"
+        WITHHELD = "withheld", "Withheld"
+        POSTPONED = "postponed", "Postponed"
+        ONGOING = "ongoing", "Ongoing"
+        CANCELLED = "cancelled", "Cancelled"
+        FINISHED = "finished", "Finished"
+        
 
     title = models.CharField(max_length=255)
     description = models.TextField(max_length=1000)
@@ -56,6 +62,7 @@ class Event(models.Model):
         default=dict, validators=[validate_coordinates]
     )  # {'lat': xx.xxxx, 'lng': yy.yyyy}
     date_time = models.DateTimeField()
+    event_status = models.CharField(choices=Status.choices , default= Status.SOON)
     tickets_amount = models.PositiveIntegerField()
     ticket_price = models.FloatField(max_length=10)
     created_at = models.DateTimeField(auto_now_add=True)
