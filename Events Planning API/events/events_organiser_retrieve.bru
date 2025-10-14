@@ -1,17 +1,17 @@
 meta {
-  name: events_destroy
+  name: events_organiser_retrieve
   type: http
-  seq: 6
+  seq: 7
 }
 
-delete {
-  url: {{baseUrl}}/api/events/:id/
+get {
+  url: {{baseUrl}}/api/events/organiser/:organiser_id/
   body: none
   auth: none
 }
 
 params:path {
-  id: 
+  organiser_id: 
 }
 
 headers {

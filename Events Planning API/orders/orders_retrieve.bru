@@ -1,11 +1,11 @@
 meta {
-  name: events_destroy
+  name: orders_retrieve
   type: http
-  seq: 6
+  seq: 3
 }
 
-delete {
-  url: {{baseUrl}}/api/events/:id/
+get {
+  url: {{baseUrl}}/api/orders/:id/
   body: none
   auth: none
 }

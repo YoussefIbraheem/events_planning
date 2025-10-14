@@ -6,16 +6,17 @@ meta {
 
 post {
   url: {{baseUrl}}/api/logout/
-  body: none
-  auth: apikey
+  body: json
+  auth: none
 }
 
 headers {
-  Authorization: {{apiKey}}
+  Authorization: Token {{apiKey}}
 }
 
-auth:apikey {
-  key: Authorization
-  value: {{apiKey}}
-  placement: header
+body:json {
+  {
+    "username": "",
+    "password": ""
+  }
 }

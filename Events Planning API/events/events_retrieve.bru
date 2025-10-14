@@ -7,9 +7,13 @@ meta {
 get {
   url: {{baseUrl}}/api/events/:id/
   body: none
-  auth: inherit
+  auth: none
 }
 
 params:path {
-  id: 
+  id: 1
+}
+
+headers {
+  Authorization: Token {{apiKey}}
 }

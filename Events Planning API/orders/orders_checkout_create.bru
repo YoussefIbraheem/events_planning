@@ -1,0 +1,41 @@
+meta {
+  name: orders_checkout_create
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/api/orders/:id/checkout/
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 
+}
+
+headers {
+  Authorization: Token {{apiKey}}
+}
+
+auth:apikey {
+  key: Authorization
+  value: {{apiKey}}
+  placement: header
+}
+
+body:json {
+  {
+    "id": 0,
+    "total_price": "",
+    "payment_method": "",
+    "status": "",
+    "attendee": "",
+    "items": [
+      {
+        "event": 0,
+        "quantity": 0
+      }
+    ]
+  }
+}

@@ -6,296 +6,640 @@ paths:
   /api/events/:
     get:
       operationId: events_list
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date-time
+        description: Filter events starting from this date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date-time
+        description: Filter events before this date
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       tags:
-        - events
+      - events
       security:
-        - tokenAuth: []
-        - TokenAuth: []
-        - {}
+      - tokenAuth: []
+      - TokenAuth: []
+      - {}
       responses:
-        "200":
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedEventList'
+          description: ''
+    post:
+      operationId: events_create
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Event'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Event'
+        required: true
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/events/{id}/:
+    get:
+      operationId: events_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this event.
+        required: true
+      tags:
+      - events
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+    put:
+      operationId: events_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this event.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Event'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Event'
+        required: true
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+    patch:
+      operationId: events_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this event.
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEvent'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEvent'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEvent'
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+    delete:
+      operationId: events_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this event.
+        required: true
+      tags:
+      - events
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/events/organiser/{organiser_id}/:
+    get:
+      operationId: events_organiser_retrieve
+      description: Return all events by a specific organiser.
+      parameters:
+      - in: path
+        name: organiser_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+  /api/login/:
+    post:
+      operationId: login_create
+      tags:
+      - login
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '401':
+          description: Unauthorized
+  /api/logout/:
+    post:
+      operationId: logout_create
+      tags:
+      - logout
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: Logged out successfully
+  /api/orders/:
+    get:
+      operationId: orders_list
+      parameters:
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date-time
+        description: Filter orders created starting from this date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date-time
+        description: Filter orders created before this date
+      - in: query
+        name: order_status
+        schema:
+          type: string
+          enum:
+          - cancelled
+          - expired
+          - paid
+          - pending
+          - reserved
+        description: |-
+          * `pending` - Pending
+          * `reserved` - Reserved
+          * `paid` - Paid
+          * `cancelled` - Cancelled
+          * `expired` - Expired
+      tags:
+      - orders
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      responses:
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Event"
-          description: ""
+                  $ref: '#/components/schemas/Order'
+          description: ''
     post:
-      operationId: events_create
+      operationId: orders_create
       tags:
-        - events
+      - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Event"
+              $ref: '#/components/schemas/CreateOrder'
           application/x-www-form-urlencoded:
             schema:
-              $ref: "#/components/schemas/Event"
+              $ref: '#/components/schemas/CreateOrder'
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/Event"
+              $ref: '#/components/schemas/CreateOrder'
         required: true
       security:
-        - tokenAuth: []
-        - TokenAuth: []
+      - tokenAuth: []
+      - TokenAuth: []
       responses:
-        "201":
+        '201':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Event"
-          description: ""
-  /api/events/{id}/:
+                $ref: '#/components/schemas/CreateOrder'
+          description: ''
+  /api/orders/{id}/:
     get:
-      operationId: events_retrieve
+      operationId: orders_retrieve
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-          description: A unique integer value identifying this event.
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this order.
+        required: true
       tags:
-        - events
+      - orders
       security:
-        - tokenAuth: []
-        - TokenAuth: []
-        - {}
+      - tokenAuth: []
+      - TokenAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Event"
-          description: ""
+                $ref: '#/components/schemas/Order'
+          description: ''
     put:
-      operationId: events_update
+      operationId: orders_update
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-          description: A unique integer value identifying this event.
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this order.
+        required: true
       tags:
-        - events
+      - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Event"
+              $ref: '#/components/schemas/CreateOrder'
           application/x-www-form-urlencoded:
             schema:
-              $ref: "#/components/schemas/Event"
+              $ref: '#/components/schemas/CreateOrder'
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/Event"
+              $ref: '#/components/schemas/CreateOrder'
         required: true
       security:
-        - tokenAuth: []
-        - TokenAuth: []
+      - tokenAuth: []
+      - TokenAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Event"
-          description: ""
+                $ref: '#/components/schemas/CreateOrder'
+          description: ''
     patch:
-      operationId: events_partial_update
+      operationId: orders_partial_update
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-          description: A unique integer value identifying this event.
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this order.
+        required: true
       tags:
-        - events
+      - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PatchedEvent"
+              $ref: '#/components/schemas/PatchedCreateOrder'
           application/x-www-form-urlencoded:
             schema:
-              $ref: "#/components/schemas/PatchedEvent"
+              $ref: '#/components/schemas/PatchedCreateOrder'
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/PatchedEvent"
+              $ref: '#/components/schemas/PatchedCreateOrder'
       security:
-        - tokenAuth: []
-        - TokenAuth: []
+      - tokenAuth: []
+      - TokenAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Event"
-          description: ""
+                $ref: '#/components/schemas/CreateOrder'
+          description: ''
     delete:
-      operationId: events_destroy
+      operationId: orders_destroy
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: integer
-          description: A unique integer value identifying this event.
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this order.
+        required: true
       tags:
-        - events
+      - orders
       security:
-        - tokenAuth: []
-        - TokenAuth: []
+      - tokenAuth: []
+      - TokenAuth: []
       responses:
-        "204":
+        '204':
           description: No response body
-  /api/login/:
+  /api/orders/{id}/cancel/:
     post:
-      operationId: login_create
+      operationId: orders_cancel_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this order.
+        required: true
       tags:
-        - login
+      - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Login"
+              $ref: '#/components/schemas/Order'
           application/x-www-form-urlencoded:
             schema:
-              $ref: "#/components/schemas/Login"
+              $ref: '#/components/schemas/Order'
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/Login"
+              $ref: '#/components/schemas/Order'
         required: true
       security:
-        - tokenAuth: []
-        - TokenAuth: []
-        - {}
+      - tokenAuth: []
+      - TokenAuth: []
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/User"
-          description: ""
-        "401":
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
-          description: ""
-  /api/logout/:
+        '200':
+          description: Order cancelled successfully.
+        '400':
+          description: Cancellation failed.
+  /api/orders/{id}/checkout/:
     post:
-      operationId: logout_create
+      operationId: orders_checkout_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this order.
+        required: true
       tags:
-        - logout
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
       security:
-        - tokenAuth: []
-        - TokenAuth: []
-        - {}
+      - tokenAuth: []
+      - TokenAuth: []
       responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
-          description: ""
+        '200':
+          description: Tickets reserved successfully.
+        '400':
+          description: Reservation failed.
+  /api/orders/{id}/finalise/:
+    post:
+      operationId: orders_finalise_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this order.
+        required: true
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
+      security:
+      - tokenAuth: []
+      - TokenAuth: []
+      responses:
+        '200':
+          description: Tickets reserved successfully.
+        '400':
+          description: Reservation failed.
   /api/register/:
     post:
       operationId: register_create
       tags:
-        - register
+      - register
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Register"
+              $ref: '#/components/schemas/Register'
           application/x-www-form-urlencoded:
             schema:
-              $ref: "#/components/schemas/Register"
+              $ref: '#/components/schemas/Register'
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/Register"
+              $ref: '#/components/schemas/Register'
         required: true
       security:
-        - tokenAuth: []
-        - TokenAuth: []
-        - {}
+      - tokenAuth: []
+      - TokenAuth: []
+      - {}
       responses:
-        "201":
+        '201':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/User"
-          description: ""
-        "400":
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
-          description: ""
+                $ref: '#/components/schemas/User'
+          description: ''
+        '400':
+          description: Bad Request
   /api/tickets/:
     get:
-      operationId: tickets_retrieve
+      operationId: tickets_list
       parameters:
-        - in: query
-          name: date_from
-          schema:
-            type: string
-            format: date-time
-          description: Filter tickets for events occurring on or after this date.
-        - in: query
-          name: date_to
-          schema:
-            type: string
-            format: date-time
-          description: Filter tickets for events occurring on or before this date.
-        - in: query
-          name: event_id
-          schema:
-            type: integer
-          description: Filter tickets for a specific event by its ID.
+      - in: query
+        name: available_only
+        schema:
+          type: boolean
+        description: Show only available (unsold) tickets
+      - in: query
+        name: date_from
+        schema:
+          type: string
+          format: date-time
+        description: Filter events starting from this date
+      - in: query
+        name: date_to
+        schema:
+          type: string
+          format: date-time
+        description: Filter events before this date
+      - in: query
+        name: event_id
+        schema:
+          type: number
+        description: Filter by event ID
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       tags:
-        - tickets
+      - tickets
       security:
-        - tokenAuth: []
-        - TokenAuth: []
-        - {}
+      - tokenAuth: []
+      - TokenAuth: []
+      - {}
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
-          description: ""
-        "403":
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
-          description: ""
-        "404":
-          content:
-            application/json:
-              schema:
-                type: object
-                additionalProperties: {}
-                description: Unspecified response body
-          description: ""
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ticket'
+          description: ''
 components:
   schemas:
+    CreateOrder:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateOrderItem'
+        payment_method:
+          $ref: '#/components/schemas/CreateOrderPaymentMethodEnum'
+      required:
+      - items
+      - payment_method
+    CreateOrderItem:
+      type: object
+      properties:
+        event_id:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+      - event_id
+      - quantity
+    CreateOrderPaymentMethodEnum:
+      enum:
+      - cash
+      - credit
+      type: string
+      description: |-
+        * `cash` - cash
+        * `credit` - credit
     Event:
       type: object
       properties:
@@ -309,8 +653,6 @@ components:
           type: string
           maxLength: 1000
         coordinates: {}
-        location_type:
-          $ref: "#/components/schemas/LocationTypeEnum"
         date_time:
           type: string
           format: date-time
@@ -323,26 +665,16 @@ components:
           type: number
           format: double
         organiser:
-          allOf:
-            - $ref: "#/components/schemas/User"
+          type: string
           readOnly: true
       required:
-        - date_time
-        - description
-        - id
-        - location_type
-        - organiser
-        - ticket_price
-        - tickets_amount
-        - title
-    LocationTypeEnum:
-      enum:
-        - seated
-        - general_admission
-      type: string
-      description: |-
-        * `seated` - Seated
-        * `general_admission` - General Admission
+      - date_time
+      - description
+      - id
+      - organiser
+      - ticket_price
+      - tickets_amount
+      - title
     Login:
       type: object
       properties:
@@ -352,8 +684,85 @@ components:
           type: string
           writeOnly: true
       required:
-        - password
-        - username
+      - password
+      - username
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        total_price:
+          type: number
+          format: double
+        payment_method:
+          $ref: '#/components/schemas/OrderPaymentMethodEnum'
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        attendee:
+          type: string
+          readOnly: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+      required:
+      - attendee
+      - id
+      - items
+      - payment_method
+    OrderItem:
+      type: object
+      properties:
+        event:
+          type: integer
+        quantity:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+      required:
+      - event
+    OrderPaymentMethodEnum:
+      enum:
+      - cash
+      - credit
+      type: string
+      description: |-
+        * `cash` - Cash
+        * `credit` - Credit
+    PaginatedEventList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+    PatchedCreateOrder:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CreateOrderItem'
+        payment_method:
+          $ref: '#/components/schemas/CreateOrderPaymentMethodEnum'
     PatchedEvent:
       type: object
       properties:
@@ -367,8 +776,6 @@ components:
           type: string
           maxLength: 1000
         coordinates: {}
-        location_type:
-          $ref: "#/components/schemas/LocationTypeEnum"
         date_time:
           type: string
           format: date-time
@@ -381,8 +788,7 @@ components:
           type: number
           format: double
         organiser:
-          allOf:
-            - $ref: "#/components/schemas/User"
+          type: string
           readOnly: true
     Register:
       type: object
@@ -399,10 +805,53 @@ components:
           type: string
           writeOnly: true
       required:
-        - email
-        - password
-        - password2
-        - username
+      - email
+      - password
+      - password2
+      - username
+    StatusEnum:
+      enum:
+      - pending
+      - reserved
+      - paid
+      - cancelled
+      - expired
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `reserved` - Reserved
+        * `paid` - Paid
+        * `cancelled` - Cancelled
+        * `expired` - Expired
+    Ticket:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        event:
+          allOf:
+          - $ref: '#/components/schemas/Event'
+          readOnly: true
+        attendee:
+          allOf:
+          - $ref: '#/components/schemas/User'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - attendee
+      - created_at
+      - event
+      - id
+      - updated_at
     User:
       type: object
       properties:
@@ -411,8 +860,7 @@ components:
           readOnly: true
         username:
           type: string
-          description:
-            Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
             only.
           pattern: ^[\w.@+-]+$
           maxLength: 150
@@ -422,8 +870,8 @@ components:
           title: Email address
           maxLength: 254
       required:
-        - id
-        - username
+      - id
+      - username
   securitySchemes:
     tokenAuth:
       type: apiKey

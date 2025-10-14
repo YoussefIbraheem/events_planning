@@ -7,7 +7,17 @@ meta {
 post {
   url: {{baseUrl}}/api/events/
   body: json
-  auth: inherit
+  auth: none
+}
+
+headers {
+  Authorization: Token {{apiKey}}
+}
+
+auth:apikey {
+  key: Authorization
+  value: {{apiKey}}
+  placement: header
 }
 
 body:json {
@@ -16,7 +26,6 @@ body:json {
     "title": "",
     "description": "",
     "coordinates": "",
-    "location_type": "",
     "date_time": "",
     "tickets_amount": 0,
     "ticket_price": "",

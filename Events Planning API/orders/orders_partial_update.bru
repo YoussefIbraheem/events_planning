@@ -1,11 +1,11 @@
 meta {
-  name: events_partial_update
+  name: orders_partial_update
   type: http
   seq: 5
 }
 
 patch {
-  url: {{baseUrl}}/api/events/:id/
+  url: {{baseUrl}}/api/orders/:id/
   body: json
   auth: none
 }
@@ -26,13 +26,12 @@ auth:apikey {
 
 body:json {
   {
-    "id": 0,
-    "title": "",
-    "description": "",
-    "coordinates": "",
-    "date_time": "",
-    "tickets_amount": 0,
-    "ticket_price": "",
-    "organiser": ""
+    "items": [
+      {
+        "event_id": 0,
+        "quantity": 0
+      }
+    ],
+    "payment_method": ""
   }
 }

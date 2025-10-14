@@ -10,15 +10,18 @@ post {
   auth: inherit
 }
 
+headers {
+  Authorization: Token {{apiKey}}
+}
+
 body:json {
   {
-    "username": "gregorypetersen",
+    "username": "ioneal",
     "password": "password@123"
   }
 }
 
 script:post-response {
-  const responseBody = res.getBody()
-  const token = responseBody.access_token
-  bru.setEnvVar("apiKey", token)
+  const access_token = res.body.access_token
+  bru.setEnvVar("apiKey", access_token)
 }
