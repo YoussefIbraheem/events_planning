@@ -45,7 +45,7 @@ class TestOrderService:
             ticket_price=100,
             tickets_amount=10,
             date_time=future_datetime,
-            event_status=Event.Status.UPCOMING
+            event_status=Event.Status.UPCOMING,
         )
         validated_data = {
             "items": [{"event_id": event.id, "quantity": 2}],
@@ -202,3 +202,23 @@ class TestOrderService:
 
         with pytest.raises(Event.DoesNotExist):
             OrderService.update_order(user, order, validated_data)
+
+    def test_cannot_create_order_with_unbookable_event(self, future_datetime):
+        user = CustomUser.objects.create_user(username="testuser", password="123")
+
+        event = Event.objects.create(
+            title="Concert",
+            description="Test event",
+            organiser=user,
+            ticket_price=100,
+            tickets_amount=10,
+            date_time=future_datetime,
+            event_status=Event.Status.SOON,
+        )
+        validated_data = {
+            "items": [{"event_id": event.id, "quantity": 2}],
+            "payment_method": Order.PaymentMethod.CREDIT,
+        }
+
+        with pytest.raises(ValueError):
+            OrderService.create_order(user, validated_data)

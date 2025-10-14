@@ -14,6 +14,7 @@ from rest_framework.authtoken.models import Token
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
+
 @pytest.fixture
 def api_client():
     return APIClient()
@@ -63,7 +64,29 @@ def event(db, organiser):
         tickets_amount=10,
         ticket_price=50.0,
         organiser=organiser,
-        event_status=Event.Status.UPCOMING
+        event_status=Event.Status.UPCOMING,
+    )
+    # Make sure tickets exist (many projects auto-generate on post_save)
+    # if your project uses post_save to create tickets, creation may already happen.
+    # Create tickets explicitly for tests (safe w/ unique ticket_code)
+    for i in range(10):
+        Ticket.objects.create(
+            event=e, ticket_code=f"t-{e.id}-{i}-{random.randint(1,10000)}"
+        )
+    return e
+
+
+@pytest.fixture
+def unbookable_event(db, organiser):
+    e = Event.objects.create(
+        title="Concert",
+        description="A test event",
+        coordinates={"lat": 0.0, "lng": 0.0},
+        date_time=timezone.now() + timezone.timedelta(days=7),
+        tickets_amount=10,
+        ticket_price=50.0,
+        organiser=organiser,
+        event_status=Event.Status.SOON,
     )
     # Make sure tickets exist (many projects auto-generate on post_save)
     # if your project uses post_save to create tickets, creation may already happen.
@@ -278,6 +301,21 @@ def test_update_order_success(auth_client, pending_order, event):
     # assert DB updated
     pending_order.refresh_from_db()
     assert pending_order.items.count() >= 1
+
+
+def test_cannot_create_order_with_unbookable_event(
+    auth_client, unbookable_event, attendee
+):
+
+    payload = {
+        "items": [
+            {"event_id": unbookable_event.id, "quantity": 2},
+        ],
+        "payment_method": Order.PaymentMethod.CASH,
+    }
+
+    resp = auth_client.post("/api/orders/", data=payload, format="json")
+    assert resp.status_code in (status.HTTP_400_BAD_REQUEST, status.HTTP_403_FORBIDDEN)
 
 
 # ---------------------------
