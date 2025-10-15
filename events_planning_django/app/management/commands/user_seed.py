@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from app.seeders import UserSeeder
+from app.factories.user_factory import UserFactory
 
 
 class Command(BaseCommand):
@@ -13,6 +13,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         
         try:
-            UserSeeder.seed(self, count=options["count"], user_type=options["user_type"])
+            UserFactory(user_type=options["user_type"]).seed(count=options["count"])
         except Exception as e:
             raise CommandError(f"Error seeding users: {e}")
