@@ -7,6 +7,7 @@ import uuid
 
 logger = getLogger("app")
 
+
 class TicketService:
 
     @staticmethod
@@ -41,8 +42,8 @@ class TicketService:
                 to_reserve_tickets.append(ticket)
 
         Ticket.objects.bulk_update(to_reserve_tickets, ["order_item", "reserved_until"])
-        order.status = Order.Status.RESERVED
-        order.save(update_fields=["status"])
+        order.order_status = Order.Status.RESERVED
+        order.save(update_fields=["order_status"])
         logger.info("All tickets have been reserved successfully\n")
         logger.info(f"Attendee:{order.attendee.username}\n")
         logger.info(f"tickets amount:{estimated_tickets_count}")
@@ -51,7 +52,7 @@ class TicketService:
     @transaction.atomic
     def finalize_order(order: Order):
 
-        if order.status != Order.Status.RESERVED:
+        if order.order_status != Order.Status.RESERVED:
 
             raise ValueError("Order is not in reserved state")
 
@@ -62,7 +63,7 @@ class TicketService:
             ticket.reserved_until = None
 
         Ticket.objects.bulk_update(tickets, ["attendee", "reserved_until"])
-        order.status = Order.Status.PAID
+        order.order_status = Order.Status.PAID
         order.save()
 
     @staticmethod
@@ -73,7 +74,7 @@ class TicketService:
             t.order_item = None
             t.reserved_until = None
         Ticket.objects.bulk_update(tickets, ["order_item", "reserved_until"])
-        order.status = Order.Status.CANCELLED
+        order.order_status = Order.Status.CANCELLED
         order.save()
 
     @staticmethod
@@ -100,7 +101,7 @@ class TicketService:
         logger.info(
             f"Removing {unsold_tickets.count()} unsold tickets from event {event.title}...\n"
         )
-        
+
         unsold_tickets.delete()
 
         logger.info(f"Done!")

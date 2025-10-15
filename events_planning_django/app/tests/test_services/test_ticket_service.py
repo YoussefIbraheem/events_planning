@@ -45,7 +45,9 @@ class TestTicketService:
 
     @pytest.fixture
     def order_with_items(self, attendee, event):
-        order = Order.objects.create(attendee=attendee, status=Order.Status.PENDING)
+        order = Order.objects.create(
+            attendee=attendee, order_status=Order.Status.PENDING
+        )
         OrderItem.objects.create(
             order=order, event=event, ticket_price=event.ticket_price, quantity=3
         )
@@ -63,7 +65,7 @@ class TestTicketService:
 
         # Ensure reserved_until set
         assert all(t.reserved_until is not None for t in reserved_tickets)
-        assert order.status == Order.Status.RESERVED
+        assert order.order_status == Order.Status.RESERVED
 
     def test_reserve_tickets_fails_if_not_enough_available(
         self, order_with_items, event
@@ -71,7 +73,7 @@ class TestTicketService:
         """Should raise ValueError if insufficient available tickets."""
         # Mark all tickets for the event as already reserved
         other_order = Order.objects.create(
-            attendee=order_with_items.attendee, status=Order.Status.RESERVED
+            attendee=order_with_items.attendee, order_status=Order.Status.RESERVED
         )
         other_item = OrderItem.objects.create(
             order=other_order, event=event, ticket_price=event.ticket_price, quantity=10
@@ -88,7 +90,9 @@ class TestTicketService:
 
     def test_reserve_tickets_fails_if_no_items(self, attendee):
         """Should raise ValueError if order has no items."""
-        order = Order.objects.create(attendee=attendee, status=Order.Status.PENDING)
+        order = Order.objects.create(
+            attendee=attendee, order_status=Order.Status.PENDING
+        )
         with pytest.raises(ValueError):
             TicketService.reserve_tickets(order)
 
@@ -104,12 +108,12 @@ class TestTicketService:
         assert all(t.attendee == order.attendee for t in sold_tickets)
         assert all(t.reserved_until is None for t in sold_tickets)
         order.refresh_from_db()
-        assert order.status == Order.Status.PAID
+        assert order.order_status == Order.Status.PAID
 
     def test_finalize_order_fails_if_not_reserved(self, order_with_items):
         """Should raise ValueError if order not in RESERVED state."""
         order = order_with_items
-        assert order.status == Order.Status.PENDING
+        assert order.order_status == Order.Status.PENDING
 
         with pytest.raises(ValueError):
             TicketService.finalize_order(order)
@@ -130,4 +134,4 @@ class TestTicketService:
             assert t.reserved_until is None
 
         order.refresh_from_db()
-        assert order.status == Order.Status.CANCELLED
+        assert order.order_status == Order.Status.CANCELLED

@@ -97,7 +97,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "id",
             "total_price",
             "payment_method",
-            "status",
+            "order_status",
             "attendee",
             "items",
         ]

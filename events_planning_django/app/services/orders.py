@@ -16,7 +16,6 @@ class OrderService:
 
         return [{"event_id": eid, "quantity": qty} for eid, qty in merged.items()]
 
-
     @classmethod
     @transaction.atomic
     def create_order(cls, user, validated_data):
@@ -25,7 +24,7 @@ class OrderService:
 
         existing_order = Order.objects.filter(
             attendee=user,
-            status__in=[Order.Status.PENDING, Order.Status.RESERVED],
+            order_status__in=[Order.Status.PENDING, Order.Status.RESERVED],
         ).first()
 
         if existing_order:
@@ -37,7 +36,7 @@ class OrderService:
         order = Order.objects.create(
             attendee=user,
             payment_method=payment_method,
-            status=Order.Status.PENDING,
+            order_status=Order.Status.PENDING,
         )
 
         new_items = []
@@ -90,8 +89,10 @@ class OrderService:
     @transaction.atomic
     def update_order(cls, user, order, validated_data):
 
-        if order.status != Order.Status.PENDING:
-            raise ValueError(f"Order is in {order.status} state and cannot be updated!")
+        if order.order_status != Order.Status.PENDING:
+            raise ValueError(
+                f"Order is in {order.order_status} state and cannot be updated!"
+            )
 
         new_items_data = cls._sync_order_items(validated_data["items"])
         payment_method = validated_data["payment_method"]

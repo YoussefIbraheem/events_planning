@@ -2,7 +2,7 @@ import pytest
 from django.db import IntegrityError
 from app.models import Order, OrderItem, Event, Ticket, CustomUser
 from app.services.orders import OrderService
-from app.factories import TicketFactory
+from app.factories.ticket_factory import TicketFactory
 import datetime
 
 
@@ -55,7 +55,7 @@ class TestOrderService:
         order = OrderService.create_order(user, validated_data)
 
         assert order.attendee == user
-        assert order.status == Order.Status.PENDING
+        assert order.order_status == Order.Status.PENDING
         assert order.items.count() == 1
         assert order.items.first().quantity == 2
 
@@ -64,7 +64,7 @@ class TestOrderService:
         order = Order.objects.create(
             attendee=user,
             payment_method=Order.PaymentMethod.CASH,
-            status=Order.Status.PENDING,
+            order_status=Order.Status.PENDING,
         )
 
         event = Event.objects.create(
@@ -103,7 +103,7 @@ class TestOrderService:
         factory = TicketFactory()
         # Simulate all tickets already sold
         for _ in range(2):
-            data = factory.create(event=event, attendee=user)
+            data = factory.make(event=event, attendee=user)
             Ticket.objects.create(**data)
 
         validated_data = {
@@ -142,7 +142,7 @@ class TestOrderService:
         order = Order.objects.create(
             attendee=user,
             payment_method=Order.PaymentMethod.CASH,
-            status=Order.Status.PENDING,
+            order_status=Order.Status.PENDING,
         )
         OrderItem.objects.create(
             order=order, event=event1, quantity=2, ticket_price=100
@@ -174,7 +174,7 @@ class TestOrderService:
         order = Order.objects.create(
             attendee=user,
             payment_method=Order.PaymentMethod.CASH,
-            status=Order.Status.PAID,
+            order_status=Order.Status.PAID,
         )
 
         validated_data = {
@@ -192,7 +192,7 @@ class TestOrderService:
         order = Order.objects.create(
             attendee=user,
             payment_method=Order.PaymentMethod.CASH,
-            status=Order.Status.PENDING,
+            order_status=Order.Status.PENDING,
         )
 
         validated_data = {

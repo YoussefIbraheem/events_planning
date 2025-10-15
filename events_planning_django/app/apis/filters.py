@@ -1,5 +1,12 @@
-from django_filters import FilterSet, DateTimeFilter, NumberFilter, BooleanFilter , TypedChoiceFilter
-from app.models import Event, Ticket , Order
+from django_filters import (
+    FilterSet,
+    DateTimeFilter,
+    NumberFilter,
+    BooleanFilter,
+    TypedChoiceFilter,
+)
+from app.models import Event, Ticket, Order
+
 
 class EventFilter(FilterSet):
 
@@ -60,7 +67,9 @@ class OrderFilter(FilterSet):
         lookup_expr="lte",
         label="Filter orders created before this date",
     )
-    order_status = TypedChoiceFilter(field_name="status", choices=Order.Status.choices)
+    order_status = TypedChoiceFilter(
+        field_name="order_status", choices=Order.Status.choices
+    )
 
     def filter_available(self, queryset, name, value):
         if value:

@@ -89,7 +89,7 @@ class Order(models.Model):
 
     total_price = models.FloatField(max_length=10, default=0)
     payment_method = models.CharField(max_length=255, choices=PaymentMethod.choices)
-    status = models.CharField(
+    order_status = models.CharField(
         max_length=255, choices=Status.choices, default=Status.PENDING
     )
     created_at = models.DateTimeField(auto_now_add=True)

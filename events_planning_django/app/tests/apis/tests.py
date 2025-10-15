@@ -104,7 +104,7 @@ def pending_order(db, attendee, event):
     order = Order.objects.create(
         attendee=attendee,
         payment_method=Order.PaymentMethod.CASH,
-        status=Order.Status.PENDING,
+        order_status=Order.Status.PENDING,
         total_price=0,
     )
     # create one item
@@ -253,7 +253,7 @@ def test_create_order_success(auth_client, event, attendee):
     else:
         order = Order.objects.get(id=order_id)
     assert order.items.count() >= 1
-    assert order.status == Order.Status.PENDING
+    assert order.order_status == Order.Status.PENDING
 
 
 def test_prevent_multiple_pending_orders(auth_client, event, attendee):
@@ -269,13 +269,16 @@ def test_prevent_multiple_pending_orders(auth_client, event, attendee):
     # Try to create another pending order -> should be rejected
     resp2 = auth_client.post("/api/orders/", data=payload, format="json")
 
-    assert resp2.status_code in (status.HTTP_400_BAD_REQUEST, status.HTTP_409_CONFLICT)
+    assert resp2.status_code in (
+        status.HTTP_400_BAD_REQUEST,
+        status.HTTP_409_CONFLICT,
+    )
 
 
 def test_update_order_only_pending(auth_client, pending_order, event):
     # mark as RESERVED and attempt update -> should be disallowed
-    pending_order.status = Order.Status.RESERVED
-    pending_order.save(update_fields=["status"])
+    pending_order.order_status = Order.Status.RESERVED
+    pending_order.save(update_fields=["order_status"])
     payload = {
         "items": [{"event_id": event.id, "quantity": 2}],
         "payment_method": Order.PaymentMethod.CASH,
@@ -288,8 +291,8 @@ def test_update_order_only_pending(auth_client, pending_order, event):
 
 def test_update_order_success(auth_client, pending_order, event):
     # ensure pending order can be updated
-    pending_order.status = Order.Status.PENDING
-    pending_order.save(update_fields=["status"])
+    pending_order.order_status = Order.Status.PENDING
+    pending_order.save(update_fields=["order_status"])
     payload = {
         "items": [{"event_id": event.id, "quantity": 2}],
         "payment_method": Order.PaymentMethod.CASH,
@@ -340,7 +343,7 @@ def test_checkout_reserves_tickets(auth_client, attendee, event):
     assert resp.status_code == status.HTTP_200_OK
 
     order.refresh_from_db()
-    assert order.status == Order.Status.RESERVED
+    assert order.order_status == Order.Status.RESERVED
 
     # check tickets reserved: tickets should have order_item set and reserved_until not None
     tickets = Ticket.objects.filter(order_item__order=order)
@@ -368,7 +371,7 @@ def test_finalize_sets_attendee_and_clears_reservation(auth_client, attendee, ev
     assert resp.status_code == status.HTTP_200_OK
 
     order.refresh_from_db()
-    assert order.status == Order.Status.PAID
+    assert order.order_status == Order.Status.PAID
     tickets = Ticket.objects.filter(order_item__order=order)
     for t in tickets:
         assert t.attendee == attendee
@@ -390,7 +393,7 @@ def test_cancel_releases_tickets(auth_client, attendee, event):
     assert resp.status_code == status.HTTP_200_OK
 
     order.refresh_from_db()
-    assert order.status == Order.Status.CANCELLED
+    assert order.order_status == Order.Status.CANCELLED
     tickets = Ticket.objects.filter(order_item__order=order)
     # after release order_item should be None
     for t in tickets:
@@ -414,7 +417,7 @@ def test_attendee_cannot_list_other_users_orders(auth_client, attendee):
     order = Order.objects.create(
         attendee=other,
         payment_method=Order.PaymentMethod.CASH,
-        status=Order.Status.PENDING,
+        order_status=Order.Status.PENDING,
     )
     resp = auth_client.get("/api/orders/")
     assert resp.status_code == status.HTTP_200_OK
