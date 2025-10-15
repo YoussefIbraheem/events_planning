@@ -2,6 +2,7 @@ import logging
 import uuid
 import datetime
 from django.db import transaction
+from django.core.cache import cache
 from django.db.models.signals import post_save, pre_save, post_delete
 from django.dispatch import receiver
 from .models import Event, Ticket, Order, OrderItem
@@ -50,3 +51,23 @@ def handle_ticket_amount_change(sender, instance: Event, **kwargs):
     elif diff < 0:
 
         TicketService.decrease_unsold_tickets(event=instance, amount=abs(diff))
+
+
+# ---------------------
+# * Cache Invalidation 
+# ---------------------
+
+
+@receiver([post_delete,post_save],sender=Event)
+def invalidate_event_cache(sender, instance, **kwargs):
+    cache.delete_pattern('*list-events*') 
+    
+
+@receiver([post_delete,post_save],sender=Ticket)
+def invalidate_ticket_cache(sender, instance, **kwargs):
+    cache.delete_pattern('*list-tickets*')  
+    
+
+@receiver([post_delete,post_save],sender=Order)
+def invalidate_order_cache(sender, instance, **kwargs):
+    cache.delete_pattern('*list-orders*')   

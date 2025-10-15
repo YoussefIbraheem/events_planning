@@ -2,9 +2,16 @@ from rest_framework import views, generics
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
-from rest_framework.exceptions import AuthenticationFailed, APIException , ValidationError , NotAuthenticated
+from rest_framework.exceptions import (
+    AuthenticationFailed,
+    APIException,
+    ValidationError,
+    NotAuthenticated,
+)
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 from django.contrib.auth import authenticate, login, logout
@@ -25,8 +32,6 @@ from app.services.orders import OrderService
 from app.services.tickets import TicketService
 from .pagination import EventPagination
 import logging
-
-
 
 
 class UserLoginView(views.APIView):
@@ -113,6 +118,10 @@ class EventViewSet(viewsets.ModelViewSet):
     filterset_class = EventFilter
     search_fields = ["title", "organiser__username"]
 
+    @method_decorator(cache_page(60 * 60 * 2, key_prefix="list-events"))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
             permission_classes = [IsAuthenticated, custom_permissions.IsOrganiser]
@@ -153,6 +162,10 @@ class TicketListView(generics.ListAPIView):
             return queryset.filter(event__organiser=user)
         return queryset
 
+    @method_decorator(cache_page(60 * 60 * 2, key_prefix="list-tickets"))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
@@ -165,6 +178,10 @@ class OrderViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
+
+    @method_decorator(cache_page(60 * 60 * 2, key_prefix="list-orders"))
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -205,10 +222,12 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
 
         except ValueError as e:
-            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError(
+                {"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST
+            )
 
     def perform_destroy(self, instance):
-        if instance.status not in [Order.Status.CANCELLED or Order.Status.EXPIRED]:
+        if instance.order_status not in [Order.Status.CANCELLED or Order.Status.EXPIRED]:
             raise NotAuthenticated(
                 "Order cannot be deleted. Please cancel the order or contact support.",
                 status.HTTP_401_UNAUTHORIZED,
