@@ -2,22 +2,22 @@ import pytest
 from django.db import IntegrityError
 from app.models import Order, OrderItem, Event, Ticket, CustomUser
 from app.services.orders import OrderService
-from app.factories.ticket_factory import TicketFactory
+from app.factories import factories
 import datetime
 
 
 @pytest.mark.django_db(transaction=True)
 class TestOrderService:
-    # ----------------------------------------------------------------------
-    # MISC
-    # ----------------------------------------------------------------------
+    # * ----------------------------------------------------------------------
+    # * MISC
+    # * ----------------------------------------------------------------------
     @pytest.fixture
     def future_datetime(self):
         return datetime.datetime.today() + datetime.timedelta(days=60)
 
-    # ----------------------------------------------------------------------
-    # _sync_order_items
-    # ----------------------------------------------------------------------
+    # * ----------------------------------------------------------------------
+    # * _sync_order_items
+    # * ----------------------------------------------------------------------
     def test_sync_order_items_merges_duplicates(self):
         items = [
             {"event_id": 1, "quantity": 2},
@@ -32,13 +32,13 @@ class TestOrderService:
     def test_sync_order_items_returns_empty_if_no_items(self):
         assert OrderService._sync_order_items([]) == []
 
-    # ----------------------------------------------------------------------
-    # create_order
-    # ----------------------------------------------------------------------
+    # * ----------------------------------------------------------------------
+    # * create_order
+    # * ----------------------------------------------------------------------
     def test_create_order_success(self, django_db_setup, future_datetime):
         user = CustomUser.objects.create_user(username="testuser", password="123")
 
-        event = Event.objects.create(
+        event = factories.EventFactory(
             title="Concert",
             description="Test event",
             organiser=user,
@@ -46,7 +46,7 @@ class TestOrderService:
             tickets_amount=10,
             date_time=future_datetime,
             event_status=Event.Status.UPCOMING,
-        )
+        ).create()
         validated_data = {
             "items": [{"event_id": event.id, "quantity": 2}],
             "payment_method": Order.PaymentMethod.CREDIT,
@@ -60,21 +60,21 @@ class TestOrderService:
         assert order.items.first().quantity == 2
 
     def test_create_order_raises_if_existing_pending(self, future_datetime):
-        user = CustomUser.objects.create_user(username="pending_user", password="123")
+        user = factories.UserFactory(username="pending_user", password="123").create()
         order = Order.objects.create(
             attendee=user,
             payment_method=Order.PaymentMethod.CASH,
             order_status=Order.Status.PENDING,
         )
 
-        event = Event.objects.create(
+        event = factories.EventFactory(
             title="Event 1",
             description="Test",
             organiser=user,
             ticket_price=50,
             tickets_amount=5,
             date_time=future_datetime,
-        )
+        ).create()
 
         validated_data = {
             "items": [{"event_id": event.id, "quantity": 1}],
@@ -88,22 +88,22 @@ class TestOrderService:
         user = CustomUser.objects.create_user(
             username="insufficient_user", password="123"
         )
-        organiser = CustomUser.objects.create_user(
+        organiser = factories.UserFactory(
             username="organiser", password="123", user_type="organiser"
-        )
-        event = Event.objects.create(
+        ).create()
+        event = factories.EventFactory(
             title="Sold Out Event",
             description="",
             organiser=organiser,
             ticket_price=100,
             tickets_amount=2,
             date_time=future_datetime,
-        )
+        ).create()
 
-        factory = TicketFactory()
-        # Simulate all tickets already sold
+        factories.factory = factories.TicketFactory()
+        # * Simulate all tickets already sold
         for _ in range(2):
-            data = factory.make(event=event, attendee=user)
+            data = factories.factory.make(event=event, attendee=user)
             Ticket.objects.create(**data)
 
         validated_data = {
@@ -114,39 +114,39 @@ class TestOrderService:
         with pytest.raises(ValueError):
             OrderService.create_order(user, validated_data)
 
-    # ----------------------------------------------------------------------
-    # update_order
-    # ----------------------------------------------------------------------
+    # * ----------------------------------------------------------------------
+    # * update_order
+    # * ----------------------------------------------------------------------
     def test_update_order_success(self, future_datetime):
-        user = CustomUser.objects.create_user(username="update_user", password="123")
-        organiser = CustomUser.objects.create_user(
+        user = factories.UserFactory(username="update_user", password="123").create()
+        organiser = factories.UserFactory(
             username="orgu", password="123", user_type="organiser"
-        )
-        event1 = Event.objects.create(
+        ).create()
+        event1 = factories.EventFactory(
             title="E1",
             description="",
             organiser=organiser,
             ticket_price=100,
             tickets_amount=10,
             date_time=future_datetime,
-        )
-        event2 = Event.objects.create(
+        ).create()
+        event2 = factories.EventFactory(
             title="E2",
             description="",
             organiser=organiser,
             ticket_price=50,
             tickets_amount=10,
             date_time=future_datetime,
-        )
+        ).create()
 
-        order = Order.objects.create(
+        order = factories.OrderFactory(
             attendee=user,
             payment_method=Order.PaymentMethod.CASH,
             order_status=Order.Status.PENDING,
-        )
-        OrderItem.objects.create(
+        ).create()
+        factories.OrderItemFactory(
             order=order, event=event1, quantity=2, ticket_price=100
-        )
+        ).create()
 
         updated_data = {
             "items": [{"event_id": event2.id, "quantity": 3}],
@@ -162,20 +162,20 @@ class TestOrderService:
         assert new_item.quantity == 3
 
     def test_update_order_fails_if_not_pending(self, future_datetime):
-        user = CustomUser.objects.create_user(username="blocked_user", password="123")
-        event = Event.objects.create(
+        user = factories.UserFactory(username="blocked_user", password="123").create()
+        event = factories.EventFactory(
             title="Concert",
             description="",
             organiser=user,
             ticket_price=100,
             tickets_amount=10,
             date_time=future_datetime,
-        )
-        order = Order.objects.create(
+        ).create()
+        order = factories.OrderFactory(
             attendee=user,
             payment_method=Order.PaymentMethod.CASH,
             order_status=Order.Status.PAID,
-        )
+        ).create()
 
         validated_data = {
             "items": [{"event_id": event.id, "quantity": 1}],
@@ -186,14 +186,14 @@ class TestOrderService:
             OrderService.update_order(user, order, validated_data)
 
     def test_update_order_with_invalid_event_raises(self):
-        user = CustomUser.objects.create_user(
+        user = factories.UserFactory(
             username="invalid_event_user", password="123"
-        )
-        order = Order.objects.create(
+        ).create()
+        order = factories.OrderFactory(
             attendee=user,
             payment_method=Order.PaymentMethod.CASH,
             order_status=Order.Status.PENDING,
-        )
+        ).create()
 
         validated_data = {
             "items": [{"event_id": 999, "quantity": 1}],
@@ -204,9 +204,9 @@ class TestOrderService:
             OrderService.update_order(user, order, validated_data)
 
     def test_cannot_create_order_with_unbookable_event(self, future_datetime):
-        user = CustomUser.objects.create_user(username="testuser", password="123")
+        user = factories.UserFactory(username="testuser", password="123").create()
 
-        event = Event.objects.create(
+        event = factories.EventFactory(
             title="Concert",
             description="Test event",
             organiser=user,
@@ -214,7 +214,7 @@ class TestOrderService:
             tickets_amount=10,
             date_time=future_datetime,
             event_status=Event.Status.SOON,
-        )
+        ).create()
         validated_data = {
             "items": [{"event_id": event.id, "quantity": 2}],
             "payment_method": Order.PaymentMethod.CREDIT,

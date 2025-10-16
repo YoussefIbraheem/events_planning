@@ -222,21 +222,21 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
 
         except ValueError as e:
-            raise ValidationError(
-                {"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
 
     def perform_destroy(self, instance):
-        if instance.order_status not in [Order.Status.CANCELLED or Order.Status.EXPIRED]:
+        if instance.order_status not in [
+            Order.Status.CANCELLED or Order.Status.EXPIRED
+        ]:
             raise NotAuthenticated(
                 "Order cannot be deleted. Please cancel the order or contact support.",
                 status.HTTP_401_UNAUTHORIZED,
             )
         return super().perform_destroy(instance)
 
-    # ----------------#
+    # * -------------------#
     # * CUSTOM ACTIONS
-    # ----------------#
+    # * -------------------#
 
     @extend_schema(
         responses={

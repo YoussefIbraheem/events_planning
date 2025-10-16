@@ -10,9 +10,9 @@ from app.services.tickets import TicketService
 
 logger = logging.getLogger("app")
 
-# ------------------------------------------------------------
-# EVENT TICKET GENERATION & UPDATES
-# ------------------------------------------------------------
+# * ----------------------------------------------------------
+# * EVENT TICKET GENERATION & UPDATES
+# * ----------------------------------------------------------
 
 
 @receiver(post_save, sender=Event)
@@ -53,21 +53,21 @@ def handle_ticket_amount_change(sender, instance: Event, **kwargs):
         TicketService.decrease_unsold_tickets(event=instance, amount=abs(diff))
 
 
-# ---------------------
-# * Cache Invalidation 
-# ---------------------
+# * -------------------
+# * Cache Invalidation
+# * -------------------
 
 
-@receiver([post_delete,post_save],sender=Event)
+@receiver([post_delete, post_save], sender=Event)
 def invalidate_event_cache(sender, instance, **kwargs):
-    cache.delete_pattern('*list-events*') 
-    
+    cache.delete_pattern("*list-events*")
 
-@receiver([post_delete,post_save],sender=Ticket)
+
+@receiver([post_delete, post_save], sender=Ticket)
 def invalidate_ticket_cache(sender, instance, **kwargs):
-    cache.delete_pattern('*list-tickets*')  
-    
+    cache.delete_pattern("*list-tickets*")
 
-@receiver([post_delete,post_save],sender=Order)
+
+@receiver([post_delete, post_save], sender=Order)
 def invalidate_order_cache(sender, instance, **kwargs):
-    cache.delete_pattern('*list-orders*')   
+    cache.delete_pattern("*list-orders*")
