@@ -1,7 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
-from app.factories.order_factory import OrderFactory, Order
-from app.factories.order_item_factory import OrderItemFactory
-from app.models import CustomUser, Event
+from app.factories.factories import OrderFactory, OrderItemFactory
+from app.models import CustomUser, Event, Order
 
 
 class Command(BaseCommand):

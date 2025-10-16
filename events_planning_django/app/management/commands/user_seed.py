@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from app.factories.user_factory import UserFactory
+from app.factories.factories import UserFactory
 
 
 class Command(BaseCommand):

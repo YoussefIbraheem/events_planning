@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from app.factories.ticket_factory import TicketFactory
+from app.factories.factories import TicketFactory
 from app.models import Event
 
 

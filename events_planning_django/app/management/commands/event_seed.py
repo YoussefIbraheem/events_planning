@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from app.factories.event_factory import EventFactory
+from app.factories.factories import EventFactory
 from app.models import CustomUser
 
 
