@@ -135,42 +135,36 @@ DATABASES = {
 
 LOGGING = {
     "version": 1,
+    "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": "\n{levelname} {asctime} {module} {message}\n",
-            "style": "{",
-        },
-        "simple": {
-            "format": "\n{levelname} {message}\n",
+            "format": "[{asctime}] {levelname} {name}: {message}",
             "style": "{",
         },
     },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "formatter": "simple",
-        },
-        "file": {
-            "class": "logging.FileHandler",
-            "filename": BASE_DIR / "debug.log",
             "formatter": "verbose",
         },
-        "null": {
-            "class": "logging.NullHandler",
-        },
+    },
+    "root": {  # ensures Celery workers get a default handler
+        "handlers": ["console"],
+        "level": "INFO",
     },
     "loggers": {
-        "app": {
-            "handlers": ["console", "file"],
-            "level": "DEBUG",
-        },
-        "django.server": {
-            "handlers": ["console", "file"],
+        "django": {
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
         },
-        "django.db.backends": {
-            "handlers": ["console", "file"],
+        "app": {  # your main app logger
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "celery": {  # <- important for Celery tasks/beat
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": False,
         },
@@ -201,7 +195,7 @@ AUTH_PASSWORD_VALIDATORS = [
 CELERY_TIMEZONE = "UTC"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
-CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_CACHE_BACKEND = REDIS_URL
 CELERY_BROKER_URL = REDIS_URL
 
