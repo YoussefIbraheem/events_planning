@@ -33,8 +33,6 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = "app.CustomUser"
 
-DJANGO_SETTINGS_MODULE = str(os.getenv("DJANGO_SETTINGS_MODULE"))
-
 REDIS_URL = str(os.getenv("REDIS_URL"))
 
 # Application definition
@@ -52,7 +50,8 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "drf_spectacular",
     "drf_spectacular_sidecar",
-    "django_celery_results"
+    "django_celery_results",
+    "django_celery_beat",
 ]
 
 MIDDLEWARE = [
