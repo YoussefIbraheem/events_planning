@@ -33,6 +33,9 @@ ALLOWED_HOSTS = []
 
 AUTH_USER_MODEL = "app.CustomUser"
 
+DJANGO_SETTINGS_MODULE = str(os.getenv("DJANGO_SETTINGS_MODULE"))
+
+REDIS_URL = str(os.getenv("REDIS_URL"))
 
 # Application definition
 
@@ -49,6 +52,7 @@ INSTALLED_APPS = [
     "rest_framework.authtoken",
     "drf_spectacular",
     "drf_spectacular_sidecar",
+    "django_celery_results"
 ]
 
 MIDDLEWARE = [
@@ -90,7 +94,7 @@ REST_FRAMEWORK = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://127.0.0.1:6379/1",
+        "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
@@ -193,6 +197,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Celery Config
+
+CELERY_TIMEZONE = "UTC"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = REDIS_URL
+CELERY_BROKER_URL = REDIS_URL
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
