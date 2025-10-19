@@ -53,6 +53,7 @@ class EventSerializer(serializers.ModelSerializer):
             "tickets_amount",
             "ticket_price",
             "organiser",
+            "event_status"
         ]
 
 
