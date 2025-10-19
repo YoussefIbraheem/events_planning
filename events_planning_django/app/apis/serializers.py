@@ -53,7 +53,7 @@ class EventSerializer(serializers.ModelSerializer):
             "tickets_amount",
             "ticket_price",
             "organiser",
-            "event_status"
+            "event_status",
         ]
 
 
@@ -73,9 +73,19 @@ class TicketSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    event = serializers.CharField()
+    event_ticket_price = serializers.SerializerMethodField("get_event_ticket_price")
+    subtotal = serializers.SerializerMethodField("get_subtotal")
+    
+    def get_event_ticket_price(self, instance):
+        return instance.event.ticket_price
+    
+    def get_subtotal(self, instance):
+        return instance.event.ticket_price * instance.quantity
+
     class Meta:
         model = OrderItem
-        fields = ["event", "quantity"]
+        fields = ["event", "quantity", "event_ticket_price", "subtotal"]
 
 
 class CreateOrderItemSerializer(serializers.Serializer):
@@ -97,11 +107,11 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             "id",
-            "total_price",
             "payment_method",
             "order_status",
             "attendee",
             "items",
+            "total_price",
         ]
 
 

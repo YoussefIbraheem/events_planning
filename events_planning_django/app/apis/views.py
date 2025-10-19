@@ -169,6 +169,7 @@ class TicketListView(generics.ListAPIView):
 
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
+    serializer_class = OrderSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = OrderFilter
 
@@ -199,30 +200,29 @@ class OrderViewSet(viewsets.ModelViewSet):
         else:
             return super().get_queryset()
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        validated_data = serializer.validated_data
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        try:
-            order = OrderService.create_order(user, validated_data)
-            serializer.instance = order
-        except ValueError as e:
-            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
+        order = OrderService.create_order(request.user, serializer.validated_data)
 
-    def perform_update(self, serializer):
+        read_serializer = OrderSerializer(order, context={"request": request})
+        return Response(read_serializer.data, status=status.HTTP_201_CREATED)
 
-        user = self.request.user
-        order = serializer.instance
-        validated_data = serializer.validated_data
-        try:
-            OrderService.update_order(user, order, validated_data)
 
-            return Response(
-                {"detail": "Order Updated Successfully"}, status=status.HTTP_200_OK
-            )
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=False)
+        serializer.is_valid(raise_exception=True)
 
-        except ValueError as e:
-            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
+        updated_order = OrderService.update_order(
+            user=request.user,
+            order=instance,
+            new_validated_data=serializer.validated_data,
+        )
+
+        read_serializer = OrderSerializer(updated_order, context={"request": request})
+        return Response(read_serializer.data, status=status.HTTP_200_OK)
 
     def perform_destroy(self, instance):
         if instance.order_status not in [

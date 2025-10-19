@@ -38,6 +38,7 @@ REDIS_URL = str(os.getenv("REDIS_URL"))
 # Application definition
 
 INSTALLED_APPS = [
+    "clearcache",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

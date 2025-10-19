@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 
+
 class CustomUser(AbstractUser):
 
     class UserType(models.TextChoices):
@@ -45,7 +46,7 @@ def validate_coordinates(value):
 
 
 class Event(models.Model):
-    
+
     class Status(models.TextChoices):
         SOON = "soon", "Soon"
         UPCOMING = "upcoming", "Upcoming"
@@ -54,14 +55,13 @@ class Event(models.Model):
         ONGOING = "ongoing", "Ongoing"
         CANCELLED = "cancelled", "Cancelled"
         FINISHED = "finished", "Finished"
-        
 
     title = models.CharField(max_length=255)
     description = models.TextField(max_length=1000)
-    latitude = models.DecimalField(max_digits=9, decimal_places=6,default=0.00)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6,default=0.00)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, default=0.00)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, default=0.00)
     date_time = models.DateTimeField()
-    event_status = models.CharField(choices=Status.choices , default= Status.SOON)
+    event_status = models.CharField(choices=Status.choices, default=Status.SOON)
     tickets_amount = models.PositiveIntegerField()
     ticket_price = models.FloatField(max_length=10)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -72,6 +72,9 @@ class Event(models.Model):
         on_delete=models.CASCADE,
         related_name="events",
     )
+
+    def __str__(self):
+        return self.title
 
 
 class Order(models.Model):
@@ -128,5 +131,3 @@ class Ticket(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True, null=True)
     reserved_until = models.DateTimeField(null=True, blank=True)
-
-    
