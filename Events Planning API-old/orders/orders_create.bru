@@ -1,0 +1,31 @@
+meta {
+  name: orders_create
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/api/orders/
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Token {{apiKey}}
+}
+
+auth:bearer {
+  token: Token 5f4576d1a31afecdd41fa81ed5882abbdc6755cf
+}
+
+body:json {
+  {
+    "items": [
+      {
+        "event_id": 0,
+        "quantity": 0
+      }
+    ],
+    "payment_method": ""
+  }
+}

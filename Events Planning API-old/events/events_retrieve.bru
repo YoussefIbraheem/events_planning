@@ -11,15 +11,9 @@ get {
 }
 
 params:path {
-  id: 
+  id: 1
 }
 
 headers {
   Authorization: Token {{apiKey}}
-}
-
-auth:apikey {
-  key: Authorization
-  value: {{apiKey}}
-  placement: header
 }

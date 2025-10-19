@@ -1,11 +1,11 @@
 meta {
-  name: orders_finalise_create
+  name: orders_checkout_create
   type: http
-  seq: 9
+  seq: 8
 }
 
 post {
-  url: {{baseUrl}}/api/orders/:id/finalise/
+  url: {{baseUrl}}/api/orders/:id/checkout/
   body: json
   auth: none
 }
@@ -27,17 +27,15 @@ auth:apikey {
 body:json {
   {
     "id": 0,
+    "total_price": "",
     "payment_method": "",
-    "order_status": "",
+    "status": "",
     "attendee": "",
     "items": [
       {
-        "event": "",
-        "quantity": 0,
-        "event_ticket_price": "",
-        "subtotal": ""
+        "event": 0,
+        "quantity": 0
       }
-    ],
-    "total_price": ""
+    ]
   }
 }

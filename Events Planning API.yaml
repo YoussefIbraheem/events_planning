@@ -40,8 +40,8 @@ paths:
       tags:
       - events
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       - {}
       responses:
         '200':
@@ -67,8 +67,8 @@ paths:
               $ref: '#/components/schemas/Event'
         required: true
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '201':
           content:
@@ -89,8 +89,8 @@ paths:
       tags:
       - events
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       - {}
       responses:
         '200':
@@ -123,8 +123,8 @@ paths:
               $ref: '#/components/schemas/Event'
         required: true
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth: 
+      - TokenAuth:
       responses:
         '200':
           content:
@@ -155,8 +155,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedEvent'
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '200':
           content:
@@ -176,8 +176,8 @@ paths:
       tags:
       - events
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '204':
           description: No response body
@@ -194,8 +194,8 @@ paths:
       tags:
       - events
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       - {}
       responses:
         '200':
@@ -222,8 +222,8 @@ paths:
               $ref: '#/components/schemas/Login'
         required: true
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       - {}
       responses:
         '200':
@@ -252,8 +252,8 @@ paths:
               $ref: '#/components/schemas/Login'
         required: true
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       - {}
       responses:
         '200':
@@ -293,8 +293,8 @@ paths:
       tags:
       - orders
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '200':
           content:
@@ -306,6 +306,7 @@ paths:
           description: ''
     post:
       operationId: orders_create
+      description: Handle order creation via the service layer.
       tags:
       - orders
       requestBody:
@@ -321,8 +322,8 @@ paths:
               $ref: '#/components/schemas/CreateOrder'
         required: true
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '201':
           content:
@@ -343,8 +344,8 @@ paths:
       tags:
       - orders
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '200':
           content:
@@ -354,6 +355,7 @@ paths:
           description: ''
     put:
       operationId: orders_update
+      description: Handle order updates through the service layer.
       parameters:
       - in: path
         name: id
@@ -376,8 +378,8 @@ paths:
               $ref: '#/components/schemas/CreateOrder'
         required: true
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '200':
           content:
@@ -408,8 +410,8 @@ paths:
             schema:
               $ref: '#/components/schemas/PatchedCreateOrder'
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '200':
           content:
@@ -429,8 +431,8 @@ paths:
       tags:
       - orders
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '204':
           description: No response body
@@ -459,8 +461,8 @@ paths:
               $ref: '#/components/schemas/Order'
         required: true
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '200':
           description: Order cancelled successfully.
@@ -491,8 +493,8 @@ paths:
               $ref: '#/components/schemas/Order'
         required: true
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '200':
           description: Tickets reserved successfully.
@@ -523,8 +525,8 @@ paths:
               $ref: '#/components/schemas/Order'
         required: true
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       responses:
         '200':
           description: Tickets reserved successfully.
@@ -548,8 +550,8 @@ paths:
               $ref: '#/components/schemas/Register'
         required: true
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       - {}
       responses:
         '201':
@@ -595,8 +597,8 @@ paths:
       tags:
       - tickets
       security:
-      - tokenAuth: []
-      - TokenAuth: []
+      - tokenAuth:
+      - TokenAuth:
       - {}
       responses:
         '200':
@@ -652,7 +654,14 @@ components:
         description:
           type: string
           maxLength: 1000
-        coordinates: {}
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
         date_time:
           type: string
           format: date-time
@@ -667,6 +676,8 @@ components:
         organiser:
           type: string
           readOnly: true
+        event_status:
+          $ref: '#/components/schemas/EventStatusEnum'
       required:
       - date_time
       - description
@@ -675,6 +686,24 @@ components:
       - ticket_price
       - tickets_amount
       - title
+    EventStatusEnum:
+      enum:
+      - soon
+      - upcoming
+      - withheld
+      - postponed
+      - ongoing
+      - cancelled
+      - finished
+      type: string
+      description: |-
+        * `soon` - Soon
+        * `upcoming` - Upcoming
+        * `withheld` - Withheld
+        * `postponed` - Postponed
+        * `ongoing` - Ongoing
+        * `cancelled` - Cancelled
+        * `finished` - Finished
     Login:
       type: object
       properties:
@@ -692,13 +721,10 @@ components:
         id:
           type: integer
           readOnly: true
-        total_price:
-          type: number
-          format: double
         payment_method:
           $ref: '#/components/schemas/OrderPaymentMethodEnum'
-        status:
-          $ref: '#/components/schemas/StatusEnum'
+        order_status:
+          $ref: '#/components/schemas/OrderStatusEnum'
         attendee:
           type: string
           readOnly: true
@@ -706,6 +732,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/OrderItem'
+        total_price:
+          type: number
+          format: double
       required:
       - attendee
       - id
@@ -715,14 +744,22 @@ components:
       type: object
       properties:
         event:
-          type: integer
+          type: string
         quantity:
           type: integer
           maximum: 9223372036854775807
           minimum: 0
           format: int64
+        event_ticket_price:
+          type: string
+          readOnly: true
+        subtotal:
+          type: string
+          readOnly: true
       required:
       - event
+      - event_ticket_price
+      - subtotal
     OrderPaymentMethodEnum:
       enum:
       - cash
@@ -731,6 +768,20 @@ components:
       description: |-
         * `cash` - Cash
         * `credit` - Credit
+    OrderStatusEnum:
+      enum:
+      - pending
+      - reserved
+      - paid
+      - cancelled
+      - expired
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `reserved` - Reserved
+        * `paid` - Paid
+        * `cancelled` - Cancelled
+        * `expired` - Expired
     PaginatedEventList:
       type: object
       required:
@@ -775,7 +826,14 @@ components:
         description:
           type: string
           maxLength: 1000
-        coordinates: {}
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,6})?$
         date_time:
           type: string
           format: date-time
@@ -790,6 +848,8 @@ components:
         organiser:
           type: string
           readOnly: true
+        event_status:
+          $ref: '#/components/schemas/EventStatusEnum'
     Register:
       type: object
       properties:
@@ -809,20 +869,6 @@ components:
       - password
       - password2
       - username
-    StatusEnum:
-      enum:
-      - pending
-      - reserved
-      - paid
-      - cancelled
-      - expired
-      type: string
-      description: |-
-        * `pending` - Pending
-        * `reserved` - Reserved
-        * `paid` - Paid
-        * `cancelled` - Cancelled
-        * `expired` - Expired
     Ticket:
       type: object
       properties:

@@ -1,13 +1,17 @@
 meta {
-  name: events_create
+  name: events_update
   type: http
-  seq: 2
+  seq: 4
 }
 
-post {
-  url: {{baseUrl}}/api/events/
+put {
+  url: {{baseUrl}}/api/events/:id/
   body: json
   auth: none
+}
+
+params:path {
+  id: 1
 }
 
 headers {
@@ -25,12 +29,10 @@ body:json {
     "id": 0,
     "title": "",
     "description": "",
-    "latitude": "",
-    "longitude": "",
+    "coordinates": "",
     "date_time": "",
     "tickets_amount": 0,
     "ticket_price": "",
-    "organiser": "",
-    "event_status": ""
+    "organiser": ""
   }
 }
