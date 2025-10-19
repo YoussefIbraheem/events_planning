@@ -6,6 +6,7 @@ from rest_framework.authtoken.models import Token
 from app.models import Order, Ticket
 from app.factories import factories
 from django.core.cache import cache
+from app.models import Event
 
 pytestmark = pytest.mark.django_db(transaction=True, reset_sequences=True)
 
@@ -340,7 +341,7 @@ def test_order_list_cache_invalidated(auth_client, attendee, organiser):
     cached_content = resp1.content
 
     # Create an event & place an order
-    event = factories.EventFactory(organiser=organiser).create()
+    event = factories.EventFactory(organiser=organiser,event_status=Event.Status.UPCOMING).create()
     payload = {
         "items": [{"event_id": event.id, "quantity": 1}],
         "payment_method": Order.PaymentMethod.CASH,

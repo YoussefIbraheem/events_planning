@@ -55,18 +55,15 @@ def handle_ticket_amount_change(sender, instance: Event, **kwargs):
 
 @receiver(pre_delete, sender=OrderItem)
 def delete_order_if_last_item(sender, instance, **kwargs):
-
+    
     order = instance.order
-    if not order:
+    if not order or getattr(order, "_skip_signal", False):
         return
+        
 
     remaining_items = order.items.exclude(id=instance.id).count()
     if remaining_items == 0:
-        try:
-            pre_delete.disconnect(delete_order_if_last_item, sender=OrderItem)
-            order.delete()
-        finally:
-            pre_delete.connect(delete_order_if_last_item, sender=OrderItem)
+        order.delete()
 
 
 # * -------------------

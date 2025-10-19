@@ -96,9 +96,11 @@ class OrderService:
 
         new_items_data = cls._sync_order_items(validated_data["items"])
         payment_method = validated_data["payment_method"]
-
-        order.items.all().delete()
-
+        order._skip_signal = True
+        try:
+            order.items.all().delete()
+        finally:
+            delattr(order,"_skip_signal")
         new_items = []
         new_total_price = 0
 
