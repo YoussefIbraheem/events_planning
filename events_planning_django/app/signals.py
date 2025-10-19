@@ -3,7 +3,7 @@ import uuid
 import datetime
 from django.db import transaction
 from django.core.cache import cache
-from django.db.models.signals import post_save, pre_save, post_delete
+from django.db.models.signals import post_save, pre_save, post_delete, pre_delete
 from django.dispatch import receiver
 from .models import Event, Ticket, Order, OrderItem
 from app.services.tickets import TicketService
@@ -51,6 +51,18 @@ def handle_ticket_amount_change(sender, instance: Event, **kwargs):
     elif diff < 0:
 
         TicketService.decrease_unsold_tickets(event=instance, amount=abs(diff))
+
+
+@receiver(pre_delete, sender=OrderItem)
+def delete_order_if_last_item(sender, instance, **kwargs):
+
+    order = instance.order
+    if not order:
+        return
+
+    remaining_items = order.items.exclude(id=instance.id).count()
+    if remaining_items == 0:
+        order.delete()
 
 
 # * -------------------
