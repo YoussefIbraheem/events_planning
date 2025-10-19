@@ -200,32 +200,42 @@ class OrderViewSet(viewsets.ModelViewSet):
         else:
             return super().get_queryset()
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        validated_data = serializer.validated_data
+    def create(self, request, *args, **kwargs):
+        """Handle order creation via the service layer."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         try:
-            OrderService.create_order(user, validated_data)
-            return Response(
-                {"detail": "Order Created Successfully"}, status=status.HTTP_200_OK
-            )
+            order = OrderService.create_order(request.user, serializer.validated_data)
+            read_serializer = OrderSerializer(order, context={"request": request})
+            return Response(read_serializer.data, status=status.HTTP_201_CREATED)
+        except ValidationError as e:
+            raise e  # already HTTP 400
         except ValueError as e:
-            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError({"detail": str(e)})
+        except Exception as e:
+            raise APIException(str(e))
 
-    def perform_update(self, serializer):
+    def update(self, request, *args, **kwargs):
+        """Handle order updates through the service layer."""
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        user = self.request.user
-        order = serializer.instance
-        validated_data = serializer.validated_data
         try:
-            OrderService.update_order(user, order, validated_data)
-
-            return Response(
-                {"detail": "Order Updated Successfully"}, status=status.HTTP_200_OK
+            updated_order = OrderService.update_order(
+                request.user, instance, serializer.validated_data
             )
-
+            read_serializer = OrderSerializer(
+                updated_order, context={"request": request}
+            )
+            return Response(read_serializer.data, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            raise e
         except ValueError as e:
-            raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
+            raise ValidationError({"detail": str(e)})
+        except Exception as e:
+            raise APIException(str(e))
 
     def perform_destroy(self, instance):
         if instance.order_status not in [
