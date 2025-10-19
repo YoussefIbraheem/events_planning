@@ -49,6 +49,6 @@ def release_expired_tickets():
         if not still_reserved and order.order_status == Order.Status.RESERVED:
             order.order_status = Order.Status.EXPIRED
             order.save(update_fields=["order_status"])
-            logger.info(f"[Celery] Marked Order #{order.id} as EXPIRED.")
+            logger.info(f"[Celery] Marked Order # {order.id} as EXPIRED.")
 
     logger.info(f"{len(affected_orders)} orders.")

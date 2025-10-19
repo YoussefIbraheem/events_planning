@@ -22,11 +22,6 @@ logger = logging.getLogger("app")
 # Load task modules from all registered Django apps.
 app.autodiscover_tasks()
 
-# @app.task(bind=True)
-# def check_schedule(self):
-#     logger.info("beep")
-#     print("beep (print fallback)")
-
 app.conf.beat_schedule = {
     'release_expired_tickets_every_minute': {
         'task': 'app.tasks.release_expired_tickets',
