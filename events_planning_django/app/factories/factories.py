@@ -12,16 +12,8 @@ class EventFactory(BaseFactory):
         return {
             "title": kwargs.get("title", faker.word()),
             "description": kwargs.get("description", faker.paragraph(10)),
-            "coordinates": kwargs.get(
-                "coordinates",
-                json.dumps(
-                    {
-                        "lat": str(faker.latitude()),
-                        "lng": str(faker.longitude()),
-                    },
-                    separators=(",", ":"),
-                ),
-            ),
+            "latitude": kwargs.get("latitude",faker.latitude()),
+            "longitude": kwargs.get("longitude",faker.longitude()),
             "date_time": kwargs.get(
                 "date_time",
                 faker.date_time_between_dates(

@@ -62,7 +62,11 @@ def delete_order_if_last_item(sender, instance, **kwargs):
 
     remaining_items = order.items.exclude(id=instance.id).count()
     if remaining_items == 0:
-        order.delete()
+        try:
+            pre_delete.disconnect(delete_order_if_last_item, sender=OrderItem)
+            order.delete()
+        finally:
+            pre_delete.connect(delete_order_if_last_item, sender=OrderItem)
 
 
 # * -------------------

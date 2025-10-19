@@ -119,7 +119,8 @@ def test_event_create_requires_organiser(api_client, attendee):
         data={
             "title": "Unauthorized event",
             "description": "desc",
-            "coordinates": {"lat": 1, "lng": 2},
+            "latitude": "1.2",
+            "longitude": "2.3",
             "date_time": (timezone.now() + timezone.timedelta(days=1)).isoformat(),
             "tickets_amount": 5,
             "ticket_price": 10.0,
@@ -135,7 +136,8 @@ def test_event_create_and_by_organiser(auth_org_client, organiser):
         data={
             "title": "My Event",
             "description": "desc",
-            "coordinates": {"lat": 1, "lng": 2},
+            "latitude": "1.2",
+            "longitude": "2.3",
             "date_time": (timezone.now() + timezone.timedelta(days=2)).isoformat(),
             "tickets_amount": 5,
             "ticket_price": 20.0,
