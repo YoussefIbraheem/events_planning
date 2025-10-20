@@ -313,7 +313,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 class OrganiserDashboardView(views.APIView):
     permission_classes = [IsAuthenticated, custom_permissions.IsOrganiser]
     
-    
+    @method_decorator(cache_page(60 * 2, key_prefix="dashboard"))
     def get(self, request):
         user = request.user
         events = Event.objects.filter(organiser=user)
