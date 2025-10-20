@@ -7,6 +7,7 @@ from app.models import Order, Ticket
 from app.factories import factories
 from django.core.cache import cache
 from app.models import Event
+import json
 
 pytestmark = pytest.mark.django_db(transaction=True, reset_sequences=True)
 
@@ -290,6 +291,21 @@ def test_checkout_fails_if_insufficient_tickets(auth_client, attendee, event):
 
 
 # * ---------------------------
+# * Org Stats
+# * ---------------------------
+
+def test_display_organiser_stats(auth_org_client , organiser):
+    resp = auth_org_client.get("/api/stats/")
+    events_count = Event.objects.filter(organiser=organiser).count()
+    orders_count = Order.objects.filter(items__event__organiser=organiser).count()
+    tickets_count = Ticket.objects.filter(event__organiser=organiser).count()
+    content = json.loads(resp.content.decode('utf-8')) 
+    assert resp.status_code == status.HTTP_200_OK
+    assert content["events_count"] == events_count
+    assert content["orders_count"] == orders_count
+    assert content["tickets"]["count"] == tickets_count
+
+# * ---------------------------
 # * Caching
 # * ---------------------------
 
@@ -354,3 +370,5 @@ def test_order_list_cache_invalidated(auth_client, attendee, organiser):
     resp2 = auth_client.get(url)
     assert resp2.content != cached_content
     assert len(resp2.data) >= 1
+    
+    
