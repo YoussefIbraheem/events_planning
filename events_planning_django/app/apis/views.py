@@ -12,6 +12,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.db.models import Count , Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 from django.contrib.auth import authenticate, login, logout
@@ -307,3 +308,33 @@ class OrderViewSet(viewsets.ModelViewSet):
             )
         except ValueError as e:
             raise ValidationError({"detail": str(e)}, code=status.HTTP_400_BAD_REQUEST)
+
+
+class OrganiserDashboardView(views.APIView):
+    permission_classes = [IsAuthenticated, custom_permissions.IsOrganiser]
+    
+    
+    def get(self, request):
+        user = request.user
+        events = Event.objects.filter(organiser=user)
+        orders = Order.objects.filter(items__event__organiser=user)
+        tickets = Ticket.objects.filter(event__organiser=user)
+        
+        data = {
+            "events_count": events.count(),
+            "orders_count": orders.count(),
+            "tickets": {
+                "count": tickets.count(),
+                "sold": tickets.filter(attendee__isnull=False).count(),
+                "unsold": tickets.filter(attendee__isnull=True).count()
+            },
+            "events": list(
+                events.annotate(
+                    tickets_sold=Count("tickets",Q(tickets__attendee__isnull=False)),
+                    tickets_total=Count("tickets")
+                ).values("id" , "title" , "tickets_sold" , "tickets_total").order_by("-date_time")[:5]
+            )
+            
+        }
+        
+        return Response(data)

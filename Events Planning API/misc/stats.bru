@@ -1,0 +1,20 @@
+meta {
+  name: stats
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/api/stats
+  body: none
+  auth: none
+}
+
+headers {
+  Authorization: Token {{apiKey}}
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

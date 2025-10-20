@@ -5,7 +5,8 @@ from .views import (
     UserLogoutView,
     EventViewSet,
     TicketListView,
-    OrderViewSet
+    OrderViewSet,
+    OrganiserDashboardView
 )
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -23,6 +24,7 @@ urlpatterns = [
     path("register/", UserRegisterView.as_view(), name="register"),
     path("logout/", UserLogoutView.as_view(), name="logout"),
     path("tickets/", TicketListView.as_view(), name="tickets"),
+    path("stats/",OrganiserDashboardView.as_view(),name="stats"),
     path("", include(router.urls)),
     # schemas and docs URLs
     path("schema/", SpectacularAPIView.as_view(api_version="v2"), name="schema"),
