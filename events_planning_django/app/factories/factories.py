@@ -2,7 +2,7 @@ from . import BaseFactory, faker
 import json
 import datetime
 from app.models import Event, Ticket, Order, OrderItem, CustomUser
-
+from django.contrib.auth.hashers import make_password
 class EventFactory(BaseFactory):
 
     model = Event
@@ -90,7 +90,7 @@ class UserFactory(BaseFactory):
         return {
             "username": kwargs.get("username", faker.unique.user_name()),
             "email": kwargs.get("email", faker.unique.email()),
-            "password": kwargs.get("password", "password@123"),
+            "password": make_password(kwargs.get("password", "password@123")),
             "first_name": kwargs.get("first_name", faker.first_name()),
             "last_name": kwargs.get("last_name", faker.last_name()),
             "user_type": kwargs.get(
