@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('title', models.CharField(max_length=255)),
                 ('description', models.TextField(max_length=1000)),
-                ('coordinates', models.JSONField(default=dict, validators=[app.models.validate_coordinates])),
+                ('coordinates', models.JSONField(default=dict)),
                 ('date_time', models.DateTimeField()),
                 ('tickets_amount', models.PositiveIntegerField()),
                 ('ticket_price', models.FloatField(max_length=10)),

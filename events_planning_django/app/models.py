@@ -1,6 +1,63 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
+from datetime import timezone
+from django.contrib.auth.models import UserManager
+
+
+class SoftDeleteQureySet(models.QuerySet):  # Custom QuerySet to handle soft deletion
+
+    def delete(self):
+        """Soft deletes the records by setting the deleted_at field to now.
+
+        Returns:
+            int: Number of records soft deleted
+        """
+        return super().update(deleted_at=timezone.now())
+
+    def hard_delete(self):
+        """Permanently deletes the records from the database.
+        Returns:
+            int: Number of records permanently deleted
+        """
+        return super().delete()
+
+    def alive(self):
+        """Returns a queryset of all alive (not soft-deleted) records.
+        Returns:
+            QuerySet: QuerySet of alive records
+        """
+        return self.filter(deleted_at__isnull=True)
+
+    def dead(self):
+        """Returns a queryset of all soft-deleted records.
+        Returns:
+            QuerySet: QuerySet of soft-deleted records
+        """
+        return self.exclude(deleted_at__isnull=True)
+
+
+class CustomUserManager(
+    UserManager
+):  # Custom manager to handle soft deletion by overriding the original UserManager
+
+    def get_queryset(self):
+        return SoftDeleteQureySet(self.model, using=self._db).alive()
+
+    def all_with_deleted(self):
+        """Returns a queryset of all users, including soft-deleted ones.
+
+        Returns:
+            QuerySet: QuerySet of all users
+        """
+        return SoftDeleteQureySet(self.model, using=self._db)
+
+    def deleted_only(self):
+        """Returns a queryset of only soft-deleted users.
+        Returns:
+            QuerySet: QuerySet of soft-deleted users
+        """
+        return SoftDeleteQureySet(self.model, using=self._db).dead()
 
 
 class CustomUser(AbstractUser):
@@ -13,11 +70,34 @@ class CustomUser(AbstractUser):
         max_length=20, choices=UserType.choices, default=UserType.ATTENDEE
     )
 
+    deleted_at = models.DateTimeField(blank=True, null=True)
+
+    objects = CustomUserManager()
+
     def is_attendee(self):
+        """verifies if the user is an attendee
+
+        Returns:
+            bool: True if the user is an attendee, False otherwise
+        """
         return self.user_type == self.UserType.ATTENDEE
 
     def is_organiser(self):
+        """verifies if the user is an organiser
+        Returns:
+            bool: True if the user is an organiser, False otherwise
+        """
         return self.user_type == self.UserType.ORGANISER
+
+    def soft_delete(self):
+        """Soft deletes the user by setting the deleted_at field to now."""
+        self.deleted_at = timezone.now()
+        self.save(update_fields=["deleted_at"])
+
+    def restore(self):
+        """Restores a soft-deleted user by clearing the deleted_at field."""
+        self.deleted_at = None
+        self.save(update_fields=["deleted_at"])
 
 
 def validate_user_is_organiser(user):
@@ -28,21 +108,6 @@ def validate_user_is_organiser(user):
 def validate_user_is_attendee(user):
     if user.user_type != CustomUser.UserType.ATTENDEE:
         raise ValidationError("User must be an attendee.")
-
-
-def validate_coordinates(value):
-    if not isinstance(value, dict):
-        raise ValidationError(
-            "Coordinates must be a dictionary with 'lat' and 'lng' keys."
-        )
-    if "lat" not in value or "lng" not in value:
-        raise ValidationError("Coordinates must include 'lat' and 'lng' keys.")
-    lat = value["lat"]
-    lng = value["lng"]
-    if not (-90 <= lat <= 90):
-        raise ValidationError("Latitude must be between -90 and 90.")
-    if not (-180 <= lng <= 180):
-        raise ValidationError("Longitude must be between -180 and 180.")
 
 
 class Event(models.Model):
