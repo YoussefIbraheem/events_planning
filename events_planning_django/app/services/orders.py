@@ -19,6 +19,20 @@ class OrderService:
     @classmethod
     @transaction.atomic
     def create_order(cls, user, validated_data):
+        """Creates a new order
+
+        Args:
+            user (CustomUser): The user creating the order
+            validated_data (dict): The validated data for the order
+
+        Raises:
+            ValueError: If the user already has an active order
+            ValueError: If there are any errors adding items to the order
+
+        Returns:
+            Order: The created order
+        """
+
         items_data = cls._sync_order_items(validated_data["items"])
         payment_method = validated_data["payment_method"]
 
@@ -88,6 +102,17 @@ class OrderService:
     @classmethod
     @transaction.atomic
     def update_order(cls, user, order, validated_data):
+        """Updates an existing order
+        Args:
+            user (CustomUser): The user updating the order
+            order (Order): The order to update
+            validated_data (dict): The validated data for the order
+        Raises:
+            ValueError: If the order is not in a state that allows updates
+        Returns:
+
+            Order: The updated order
+        """
 
         if order.order_status != Order.Status.PENDING:
             raise ValueError(
@@ -100,7 +125,7 @@ class OrderService:
         try:
             order.items.all().delete()
         finally:
-            delattr(order,"_skip_signal")
+            delattr(order, "_skip_signal")
         new_items = []
         new_total_price = 0
 
