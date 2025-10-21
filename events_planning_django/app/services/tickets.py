@@ -13,6 +13,14 @@ class TicketService:
     @staticmethod
     @transaction.atomic
     def reserve_tickets(order: Order):
+        """Reserve tickets for the given order
+
+        Raises:
+            ValueError: If the order is not in a state that allows reservation
+            ValueError: If there are not enough available tickets
+        Returns:
+            None
+        """
 
         items = order.items.all()
         if not items:
@@ -51,7 +59,12 @@ class TicketService:
     @staticmethod
     @transaction.atomic
     def finalize_order(order: Order):
-
+        """Finalizes the order by assigning tickets to the attendee
+        Raises:
+            ValueError: If the order is not in reserved state
+        Returns:
+            None
+        """
         if order.order_status != Order.Status.RESERVED:
 
             raise ValueError("Order is not in reserved state")
@@ -68,7 +81,12 @@ class TicketService:
 
     @staticmethod
     def release_reservation(order):
-
+        """Releases the reservation of tickets for the given order
+        Raises:
+            ValueError: If the order is not in reserved state
+        Returns:
+            None
+        """
         tickets = Ticket.objects.filter(order_item__order=order)
         for t in tickets:
             t.order_item = None
@@ -79,6 +97,13 @@ class TicketService:
 
     @staticmethod
     def increase_tickets(event, amount):
+        """Add tickets to an event when its total amount increases.
+        Args:
+            event (Event): The event to add tickets to
+            amount (int): The number of tickets to add
+        Returns:
+            None
+        """
         event_date_time = event.date_time
         timestamp = datetime.strftime(event_date_time, "%Y%m%d%H%M%S")
         tickets = [
@@ -94,7 +119,13 @@ class TicketService:
 
     @staticmethod
     def decrease_unsold_tickets(event, amount):
-        """Remove unsold tickets if event's total amount decreases."""
+        """Remove unsold tickets if event's total amount decreases.
+        Args:
+            event (Event): The event to remove tickets from
+            amount (int): The number of tickets to remove
+        Returns:
+            None
+        """
         unsold_tickets = Ticket.objects.filter(event=event, attendee__isnull=True)[
             :amount
         ]
